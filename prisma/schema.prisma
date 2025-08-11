@@ -1,0 +1,176 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Telefone E164 sem '+', único para integração WhatsApp
+  phoneE164  String?  @unique
+  email      String?  @unique
+  name       String?
+
+  // Relacionamentos
+  properties   Property[]
+  lists        List[]
+  comments     Comment[]
+  events       Event[]
+  memberships  HouseholdMember[]
+
+  @@index([phoneE164])
+  @@index([email])
+}
+
+model Household {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  members   HouseholdMember[]
+  lists     List[]
+}
+
+model HouseholdMember {
+  id           String    @id @default(cuid())
+  createdAt    DateTime  @default(now())
+  household    Household @relation(fields: [householdId], references: [id])
+  householdId  String
+  user         User      @relation(fields: [userId], references: [id])
+  userId       String
+  role         MemberRole @default(MEMBER)
+}
+
+enum MemberRole {
+  OWNER
+  MEMBER
+}
+
+model Property {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  createdBy    User?    @relation(fields: [createdByUserId], references: [id])
+  createdByUserId String?
+
+  sourceUrl    String
+  title        String?
+
+  // Preços e características
+  price        Int?     @db.Integer // BRL
+  m2           Int?     @db.Integer
+  condo        Int?     @db.Integer // mensal
+  iptu         Int?     @db.Integer // anual
+  rooms        Int?     @db.Integer
+  parking      Int?     @db.Integer
+
+  
+  // Localização expandida
+  neigh        String?  // bairro
+  city         String?  // cidade
+  state        String?  // estado
+  zipCode      String?  // CEP
+  
+  // Score e análise
+  score        Int?     // 0-100
+  scoreReasons Json?
+  photos       Json?
+
+  // Relacionamentos
+  lists        ListItem[]
+  comments     Comment[]  // ← ADICIONAR ESTE CAMPO
+
+  // Índices para consultas frequentes
+  @@index([price])
+  @@index([m2])
+  @@index([score])
+  @@index([city, neigh])
+  @@index([createdAt])
+
+  // Status do imóvel
+  status      PropertyStatus @default(ACTIVE)
+  
+  // Informações adicionais
+  description String?
+  amenities   Json?        // comodidades (array)
+  contactInfo Json?        // informações de contato
+  
+  // Metadados de parsing
+  lastParsedAt DateTime?
+  parseAttempts Int        @default(0)
+  parseErrors   Json?
+}
+
+enum PropertyStatus {
+  ACTIVE
+  SOLD
+  RENTED
+  INACTIVE
+  PENDING
+}
+
+model List {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  name          String
+  owner         User?    @relation(fields: [ownerId], references: [id])
+  ownerId       String?
+  household     Household? @relation(fields: [householdId], references: [id])
+  householdId   String?
+  brokerId      String?
+  publicSlug    String?  @unique
+
+  items         ListItem[]
+
+  @@index([publicSlug])
+  @@index([brokerId])
+}
+
+model ListItem {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  list       List     @relation(fields: [listId], references: [id])
+  listId     String
+  property   Property @relation(fields: [propertyId], references: [id])
+  propertyId String
+  notes      String?
+  favorite   Boolean  @default(false)
+  score      Int?
+}
+
+model Comment {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id])
+  userId     String?
+  property   Property @relation(fields: [propertyId], references: [id])
+  propertyId String
+  text       String
+  
+  // Adicionar campo para comentários anônimos
+  isAnonymous Boolean @default(false)
+}
+
+model Event {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id])
+  userId     String?
+  type       String
+  payload    Json?
+}
