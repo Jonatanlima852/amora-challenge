@@ -20,11 +20,15 @@ model User {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  // Telefone E164 sem '+', único para integração WhatsApp
-  phoneE164  String?  @unique
+  // Campos do Supabase Auth
+  supabaseId String?  @unique // auth.users.id
   email      String?  @unique
+  phoneE164  String?  @unique
+  
+  // Campos customizados
   name       String?
-
+  verified   Boolean  @default(false)  // Telefone verificado
+  
   // Relacionamentos
   properties   Property[]
   lists        List[]
@@ -34,6 +38,7 @@ model User {
 
   @@index([phoneE164])
   @@index([email])
+  @@index([supabaseId])
 }
 
 model Household {
@@ -173,4 +178,18 @@ model Event {
   userId     String?
   type       String
   payload    Json?
+}
+
+// Nova tabela para verificação de telefone
+model PhoneVerification {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  phoneE164 String
+  code      String   // Código de 6 dígitos
+  expiresAt DateTime // Expira em 10 minutos
+  verified  Boolean  @default(false)
+  attempts  Int      @default(0) // Tentativas de verificação
+  
+  @@index([phoneE164])
+  @@index([code])
 }
