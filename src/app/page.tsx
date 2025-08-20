@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Home, Link, TrendingUp, Target, Sparkles } from "lucide-react"
+import { Home, Link as LinkIcon, TrendingUp, Target, Sparkles, User, LogIn } from "lucide-react"
+import Link from "next/link"
 
 export default function HomePage() {
   return (
@@ -22,10 +23,26 @@ export default function HomePage() {
               </div>
             </div>
             
-            <Button variant="outline" size="sm">
-              <Link className="w-4 h-4 mr-2" />
-              Como funciona
-            </Button>
+            <div className="flex items-center space-x-3">
+              <Button variant="outline" size="sm">
+                <LinkIcon className="w-4 h-4 mr-2" />
+                Como funciona
+              </Button>
+              
+              <Link href="/auth/login">
+                <Button variant="ghost" size="sm">
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Entrar
+                </Button>
+              </Link>
+              
+              <Link href="/auth/register">
+                <Button size="sm" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+                  <User className="w-4 h-4 mr-2" />
+                  Criar conta
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -61,11 +78,14 @@ export default function HomePage() {
                   placeholder="Cole o link do imóvel aqui..."
                   className="flex-1 text-lg py-6"
                 />
-                <Button size="lg" className="px-8">
+                <Button size="lg" className="px-8 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
                   <Sparkles className="w-5 h-5 mr-2" />
                   Analisar
                 </Button>
               </div>
+              <p className="text-sm text-gray-500 mt-3">
+                ⚠️ Você precisa estar logado para adicionar imóveis
+              </p>
             </CardContent>
           </Card>
 
@@ -73,7 +93,7 @@ export default function HomePage() {
           <div className="grid md:grid-cols-3 gap-8 mb-12">
             <Card className="text-center p-6 hover:shadow-lg transition-shadow">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Link className="w-8 h-8 text-blue-600" />
+                <LinkIcon className="w-8 h-8 text-blue-600" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Cole links facilmente</h3>
               <p className="text-gray-600">
@@ -101,6 +121,30 @@ export default function HomePage() {
               </p>
             </Card>
           </div>
+
+          {/* CTA Section */}
+          <Card className="max-w-2xl mx-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+            <CardContent className="p-8 text-center">
+              <h3 className="text-2xl font-bold mb-4">Pronto para começar?</h3>
+              <p className="text-blue-100 mb-6">
+                Crie sua conta gratuita e comece a analisar imóveis com inteligência artificial
+              </p>
+              <div className="flex space-x-4 justify-center">
+                <Link href="/auth/register">
+                  <Button size="lg" variant="secondary" className="bg-white text-blue-600 hover:bg-gray-100">
+                    <User className="w-5 h-5 mr-2" />
+                    Criar conta grátis
+                  </Button>
+                </Link>
+                <Link href="/auth/login">
+                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
+                    <LogIn className="w-5 h-5 mr-2" />
+                    Já tenho conta
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>
