@@ -1,8 +1,8 @@
-import { ParsingResult, ParsedProperty, ParserConfig } from '../../../../types/property';
+import { ParsingResult, ParsedProperty, ParserConfig } from '../../../types/property';
 
-export async function parseVivaReal(url: string, config: ParserConfig): Promise<ParsingResult> {
+export async function parseDefault(url: string, config: ParserConfig): Promise<ParsingResult> {
   try {
-    console.log('Parsing VivaReal:', url);
+    console.log('Parsing genérico:', url);
     
     const response = await fetch(url, {
       headers: {
@@ -22,7 +22,7 @@ export async function parseVivaReal(url: string, config: ParserConfig): Promise<
     const property: ParsedProperty = {
       sourceUrl: url,
       parsedAt: new Date(),
-      parser: 'viva-real'
+      parser: 'default'
     };
 
     // Título
@@ -31,7 +31,7 @@ export async function parseVivaReal(url: string, config: ParserConfig): Promise<
       property.title = titleMatch[1].trim().replace(/[^\w\s-]/g, '');
     }
 
-    // Preço
+    // Preço (padrões genéricos)
     const priceMatch = html.match(/R\$\s*([\d.,]+)/g);
     if (priceMatch && priceMatch.length > 0) {
       const priceStr = priceMatch[0].replace(/[^\d]/g, '');
@@ -56,12 +56,6 @@ export async function parseVivaReal(url: string, config: ParserConfig): Promise<
       property.parking = parseInt(parkingMatch[1]);
     }
 
-    // Bairro
-    const neighMatch = html.match(/(?:bairro|localiza[çc][ãa]o)[^>]*>([^<]+)/i);
-    if (neighMatch) {
-      property.neigh = neighMatch[1].trim();
-    }
-
     // Fotos
     const photoMatches = html.match(/https?:\/\/[^"'\s]+\.(?:jpg|jpeg|png|webp)/gi);
     if (photoMatches) {
@@ -71,7 +65,7 @@ export async function parseVivaReal(url: string, config: ParserConfig): Promise<
     return { success: true, property };
 
   } catch (error) {
-    console.error('Erro parsing VivaReal:', error);
+    console.error('Erro parsing genérico:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro desconhecido'

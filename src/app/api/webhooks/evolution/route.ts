@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { normalizePhoneE164, extractFirstUrl } from '../../../../utils';
-import { WhatsAppService } from '../../../services/notifications';
-import { MessageTemplatesService } from '../../../services/notifications';
-import { PropertyService } from '../../../services/property';
+import { WhatsAppService } from '../../../../services/notifications';
+import { MessageTemplatesService } from '../../../../services/notifications';
+import { PropertyService } from '../../../../services/property';
 
 
 export async function POST(request: NextRequest) {

@@ -1,4 +1,4 @@
-import { ParsedProperty, ParsingResult } from '../../../../types/property';
+import { ParsedProperty, ParsingResult } from '../../../types/property';
 
 export abstract class BaseParser {
   abstract parse(url: string): Promise<ParsingResult>;

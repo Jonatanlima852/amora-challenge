@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Phone, Loader2 } from 'lucide-react';
-import { checkExistingUser, sendVerificationCode, verifyPhone } from '@/app/services';
+import { checkExistingUser, sendVerificationCode, verifyPhone } from '@/services';
 
 interface PhoneVerificationModalProps {
   isOpen: boolean;

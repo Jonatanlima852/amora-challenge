@@ -1,4 +1,4 @@
-import { ParsedProperty, PropertyScore } from '../../../types/property';
+import { ParsedProperty, PropertyScore } from '../../types/property';
 
 /**
  * Sistema de scoring para imóveis (Índice aMORA)

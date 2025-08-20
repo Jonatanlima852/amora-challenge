@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { PropertyList } from '@/components/property/PropertyList';
-import { PropertyCard } from '@/components/property/PropertyCard';
+import { PropertyList } from '@/app/properties/_components/PropertyList';
+import { PropertyCard } from '@/app/properties/_components/PropertyCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,9 +13,9 @@ import { useProperties } from '@/hooks/useProperties';
 import { useAuth } from '@/contexts/AuthContext';
 import { ParsedProperty } from '@/types/property';
 import { toast } from 'sonner';
-import { PhoneVerificationModal } from '@/components/auth/PhoneVerificationModal';
-import { SyncAccountsModal } from '@/components/auth/SyncAccountsModal';
-import { checkExistingUser } from '@/app/services';
+import { PhoneVerificationModal } from '@/app/properties/_components/PhoneVerificationModal';
+import { SyncAccountsModal } from '@/app/properties/_components/SyncAccountsModal';
+import { checkExistingUser } from '@/services';
 
 export default function PropertiesPage() {
   const [newPropertyUrl, setNewPropertyUrl] = useState('');

@@ -3,7 +3,7 @@ import { AIParserService } from '../parsing';
 import { PropertyScoringService } from './property-scoring.service';
 import { WhatsAppService } from '../notifications';
 import { MessageTemplatesService } from '../notifications';
-import { ParsingResult } from '../../../types/property';
+import { ParsingResult } from '../../types/property';
 
 
 /**

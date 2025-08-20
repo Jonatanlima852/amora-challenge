@@ -1,4 +1,4 @@
-import { ParsingResult, ParsedProperty, ParserConfig } from '../../../../types/property';
+import { ParsingResult, ParsedProperty, ParserConfig } from '../../../types/property';
 
 /**
  * Parser para QuintoAndar

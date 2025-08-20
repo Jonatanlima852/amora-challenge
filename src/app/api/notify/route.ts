@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { WhatsAppService } from '../../services/notifications';
+import { WhatsAppService } from '../../../services/notifications';
 
 export async function POST(request: NextRequest) {
   try {

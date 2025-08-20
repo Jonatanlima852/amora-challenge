@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { PropertyService } from '../../services/property';
+import { PropertyService } from '../../../services/property';
 
 // GET /api/properties - Listar propriedades do usuário
 export async function GET(request: NextRequest) {
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
         scoreReasons: property.scoreReasons,
         sourceUrl: property.sourceUrl,
         status: property.status,
-        parsedAt: property.parsedAt,
+        lastParsedAt: property.lastParsedAt,
         createdAt: property.createdAt,
         createdBy: property.createdBy,
       })),
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
         scoreReasons: property.scoreReasons,
         sourceUrl: property.sourceUrl,
         status: property.status,
-        parsedAt: property.parsedAt,
+        lastParsedAt: property.lastParsedAt,
         createdAt: property.createdAt,
         createdBy: property.createdBy,
       },

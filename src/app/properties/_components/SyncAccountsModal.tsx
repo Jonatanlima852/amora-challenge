@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AlertCircle, CheckCircle, Loader2, Link as LinkIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
-import { syncUserWithDatabase } from '@/app/services';
+import { syncUserWithDatabase } from '@/services';
 
 interface SyncAccountsModalProps {
   isOpen: boolean;

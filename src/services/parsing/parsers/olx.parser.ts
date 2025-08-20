@@ -1,4 +1,4 @@
-import { ParsingResult, ParsedProperty, ParserConfig } from '../../../../types/property';
+import { ParsingResult, ParsedProperty, ParserConfig } from '../../../types/property';
 
 export async function parseOLX(url: string, config: ParserConfig): Promise<ParsingResult> {
   try {

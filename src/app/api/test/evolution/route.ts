@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { checkInstanceStatus } from '../../../../lib/evolution-whatsapp';
+import { WhatsAppService } from '../../../../services/notifications';
 
 export async function GET() {
   try {
-    const isConnected = await checkInstanceStatus();
+    const isConnected = await WhatsAppService.checkInstanceStatus();
     
     return NextResponse.json({
       status: 'ok',

@@ -1,6 +1,6 @@
-import { ParsedProperty, ParsingResult, ParserConfig } from '../../../types/property';
+import { ParsedProperty, ParsingResult, ParserConfig } from '../../types/property';
 import { AI_CONFIG, SSL_CONFIG } from '../../config';
-import { parseNumber, extractDomain } from '../../../utils';
+import { parseNumber, extractDomain } from '../../utils';
 
 // Configuração SSL para desenvolvimento
 if (process.env.NODE_ENV === 'development') {
