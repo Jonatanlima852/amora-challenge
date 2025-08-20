@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '../../../../generated/prisma';
+import { prisma } from '@/lib/prisma';
 import { normalizePhoneE164, extractFirstUrl } from '../../../../utils';
 import { WhatsAppService } from '../../../services/notifications';
 import { MessageTemplatesService } from '../../../services/notifications';
 import { PropertyService } from '../../../services/property';
 
-const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {
