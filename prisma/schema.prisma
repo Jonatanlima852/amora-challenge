@@ -28,6 +28,7 @@ model User {
   // Campos customizados
   name       String?
   verified   Boolean  @default(false)  // Telefone verificado
+  role       UserRole @default(USER)
   
   // Relacionamentos
   properties   Property[]
@@ -63,6 +64,12 @@ model HouseholdMember {
 enum MemberRole {
   OWNER
   MEMBER
+}
+
+enum UserRole {
+  USER
+  BROKER
+  ADMIN
 }
 
 model Property {
