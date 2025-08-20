@@ -1,11 +1,10 @@
-import { PrismaClient } from '../../../generated/prisma';
+import { prisma } from '@/lib/prisma';
 import { AIParserService } from '../parsing';
 import { PropertyScoringService } from './property-scoring.service';
 import { WhatsAppService } from '../notifications';
 import { MessageTemplatesService } from '../notifications';
 import { ParsingResult } from '../../../types/property';
 
-const prisma = new PrismaClient();
 
 /**
  * Serviço principal para processamento de imóveis

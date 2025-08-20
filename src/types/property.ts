@@ -3,31 +3,31 @@
  */
 
 export interface ParsedProperty {
-  // Dados básicos
-  title?: string;
-  description?: string;
-  
-  // Preços e características
-  price?: number;        // BRL
-  m2?: number;          // metros quadrados
-  condo?: number;       // condomínio mensal
-  iptu?: number;        // IPTU anual
-  rooms?: number;       // quartos
-  parking?: number;     // vagas
-  
-  // Localização
-  neigh?: string;       // bairro
-  city?: string;        // cidade
-  state?: string;       // estado
-  zipCode?: string;     // CEP
-  
-  // Mídia
-  photos?: string[];    // URLs das fotos
-  
-  // Metadados
+  id?: string;
   sourceUrl: string;
   parsedAt: Date;
-  parser?: string;      // qual parser foi usado
+  parser: string;
+  title: string;
+  price?: number;
+  m2?: number;
+  condo?: number;
+  iptu?: number;
+  rooms?: number;
+  parking?: number;
+  neigh?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  photos?: string[];
+  // Adicionar propriedades que faltam
+  score?: number;
+  scoreReasons?: string[];
+  status?: string;
+  createdAt?: Date;
+  createdBy?: {
+    name?: string;
+    phoneE164?: string;
+  };
 }
 
 export interface PropertyScore {
