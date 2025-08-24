@@ -60,7 +60,8 @@ export async function GET(request: NextRequest) {
               }
             }
           }
-        }
+        },
+        preferences: true
       }
     });
 

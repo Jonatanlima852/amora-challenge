@@ -51,8 +51,10 @@ export interface User {
   name: string;
   email: string;
   phone: string;
+  city?: string;
   role: 'user' | 'broker' | 'admin';
   verified: boolean;
+  preferences?: PropertyPreferences;
 }
 
 export interface NotificationSettings {
@@ -61,9 +63,11 @@ export interface NotificationSettings {
   groupActivity: boolean;
   priceChanges: boolean;
   marketUpdates: boolean;
+  [key: string]: boolean; // Para permitir acesso dinâmico
 }
 
 export interface PropertyPreferences {
+  minPrice: number;
   maxPrice: number;
   minArea: number;
   maxArea: number;

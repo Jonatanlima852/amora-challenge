@@ -37,6 +37,7 @@ model User {
   comments     Comment[]
   events       Event[]
   memberships  HouseholdMember[]
+  preferences  UserPreferences?
 
   @@index([phoneE164])
   @@index([email])
@@ -186,6 +187,39 @@ model Event {
   userId     String?
   type       String
   payload    Json?
+}
+
+// Preferências do usuário
+model UserPreferences {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relacionamento com usuário (1:1)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String   @unique
+  
+  // Preferências de preço
+  minPrice  Int?     // Preço mínimo em centavos
+  maxPrice  Int?     // Preço máximo em centavos
+  
+  // Preferências de área
+  minArea   Int?     // Área mínima em m²
+  maxArea   Int?     // Área máxima em m²
+  
+  // Preferências de localização
+  neighborhoods Json? // Array de bairros preferidos
+  
+  // Preferências de tipo de imóvel
+  propertyTypes Json? // Array de tipos preferidos
+  
+  // Preferências de estacionamento
+  minParking Int?    // Mínimo de vagas
+  
+  // Configurações de notificação
+  notifications Json? // Objeto com configurações de notificação
+  
+  @@index([userId])
 }
 
 // Nova tabela para verificação de telefone

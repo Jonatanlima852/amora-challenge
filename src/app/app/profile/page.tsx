@@ -19,19 +19,31 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
+import { PropertyPreferences, NotificationSettings } from "@/types/app";
 
 export default function ProfilePage() {
   const { user, userRole, fetchUserData } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [userData, setUserData] = useState<any>(null);
-  const [formData, setFormData] = useState({
+  const [userData, setUserData] = useState<{
+    properties?: any[];
+    memberships?: any[];
+    lists?: any[];
+    preferences?: PropertyPreferences;
+    phoneE164?: string;
+    verified?: boolean;
+  } | null>(null);
+  const [formData, setFormData] = useState<{
+    name: string;
+    phoneE164: string;
+    city: string;
+  }>({
     name: '',
     phoneE164: '',
     city: ''
   });
 
-  const [notifications, setNotifications] = useState({
+  const [notifications, setNotifications] = useState<NotificationSettings>({
     weeklyDigest: true,
     newSimilar: true,
     groupActivity: true,
@@ -39,20 +51,27 @@ export default function ProfilePage() {
     marketUpdates: true,
   });
 
-  const [preferences, setPreferences] = useState({
+  const [preferences, setPreferences] = useState<PropertyPreferences>({
+    minPrice: 0,
     maxPrice: 800000,
     minArea: 60,
     maxArea: 150,
-    neighborhoods: ["Pinheiros", "Vila Madalena", "Itaim Bibi"],
-    propertyTypes: ["apartment", "house"],
+    neighborhoods: [],
+    propertyTypes: [],
     minParking: 1,
   });
 
-  const [whatsappStatus, setWhatsappStatus] = useState({
+  const [whatsappStatus, setWhatsappStatus] = useState<{
+    connected: boolean;
+    phone: string;
+    lastSync: string;
+  }>({
     connected: true,
     phone: "+55 11 99999-9999",
     lastSync: "2 horas atrás",
   });
+
+  const [newNeighborhood, setNewNeighborhood] = useState('');
 
   // Carregar dados do usuário
   useEffect(() => {
@@ -66,6 +85,27 @@ export default function ProfilePage() {
             phoneE164: result.data.phoneE164 || '',
             city: result.data.city || ''
           });
+          
+          // Carregar preferências se existirem
+          if (result.data.preferences) {
+            setPreferences({
+              minPrice: result.data.preferences.minPrice || 0,
+              maxPrice: result.data.preferences.maxPrice || 800000,
+              minArea: result.data.preferences.minArea || 60,
+              maxArea: result.data.preferences.maxArea || 150,
+              neighborhoods: result.data.preferences.neighborhoods || [],
+              propertyTypes: result.data.preferences.propertyTypes || [],
+              minParking: result.data.preferences.minParking || 1,
+            });
+            
+            // Carregar notificações se existirem
+            if (result.data.preferences.notifications) {
+              setNotifications({
+                ...notifications, // manter valores padrão
+                ...result.data.preferences.notifications // sobrescrever com dados do banco
+              });
+            }
+          }
         }
       } catch (error) {
         console.error('Erro ao carregar dados do usuário:', error);
@@ -86,11 +126,11 @@ export default function ProfilePage() {
     }).format(price);
   };
 
-  const updateNotification = (key: string, value: boolean) => {
+  const updateNotification = (key: keyof NotificationSettings, value: boolean) => {
     setNotifications(prev => ({ ...prev, [key]: value }));
   };
 
-  const updatePreference = (key: string, value: any) => {
+  const updatePreference = (key: keyof PropertyPreferences, value: any) => {
     setPreferences(prev => ({ ...prev, [key]: value }));
   };
 
@@ -100,6 +140,13 @@ export default function ProfilePage() {
         ...prev,
         neighborhoods: [...prev.neighborhoods, neighborhood]
       }));
+    }
+  };
+
+  const handleAddNeighborhood = () => {
+    if (newNeighborhood.trim() && !preferences.neighborhoods.includes(newNeighborhood.trim())) {
+      addNeighborhood(newNeighborhood.trim());
+      setNewNeighborhood(''); // Limpar o input
     }
   };
 
@@ -140,6 +187,59 @@ export default function ProfilePage() {
       // TODO: Mostrar toast de erro
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSavePreferences = async () => {
+    try {
+      const response = await fetch('/api/auth/preferences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(preferences),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        // TODO: Mostrar toast de sucesso
+        console.log('Preferências salvas com sucesso');
+      } else {
+        const error = await response.json();
+        console.error('Erro ao salvar preferências:', error);
+        // TODO: Mostrar toast de erro
+      }
+    } catch (error) {
+      console.error('Erro ao salvar preferências:', error);
+      // TODO: Mostrar toast de erro
+    }
+  };
+
+  const handleSaveNotifications = async () => {
+    try {
+      const response = await fetch('/api/auth/preferences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...preferences,
+          notifications
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        // TODO: Mostrar toast de sucesso
+        console.log('Notificações salvas com sucesso');
+      } else {
+        const error = await response.json();
+        console.error('Erro ao salvar notificações:', error);
+        // TODO: Mostrar toast de erro
+      }
+    } catch (error) {
+      console.error('Erro ao salvar notificações:', error);
+      // TODO: Mostrar toast de erro
     }
   };
 
@@ -276,8 +376,8 @@ export default function ProfilePage() {
                     <label className="text-xs text-gray-500">Mínimo</label>
                     <Input
                       type="number"
-                      value={preferences.maxPrice / 1000}
-                      onChange={(e) => updatePreference('maxPrice', parseInt(e.target.value) * 1000)}
+                      value={preferences.minPrice / 1000}
+                      onChange={(e) => updatePreference('minPrice', parseInt(e.target.value) * 1000)}
                       placeholder="800"
                     />
                     <span className="text-xs text-gray-500">mil reais</span>
@@ -329,9 +429,11 @@ export default function ProfilePage() {
                   <div className="flex gap-2">
                     <Input
                       placeholder="Adicionar bairro..."
-                      onKeyPress={(e) => e.key === 'Enter' && addNeighborhood(e.currentTarget.value)}
+                      value={newNeighborhood}
+                      onChange={(e) => setNewNeighborhood(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddNeighborhood()}
                     />
-                    <Button size="sm" onClick={() => addNeighborhood('Novo Bairro')}>
+                    <Button size="sm" onClick={handleAddNeighborhood}>
                       Adicionar
                     </Button>
                   </div>
@@ -390,7 +492,9 @@ export default function ProfilePage() {
                 </Select>
               </div>
 
-              <Button>Salvar Preferências</Button>
+              <Button onClick={handleSavePreferences} className="w-full">
+                Salvar Preferências
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -427,10 +531,14 @@ export default function ProfilePage() {
                   </div>
                   <Switch
                     checked={value}
-                    onCheckedChange={(checked) => updateNotification(key, checked)}
+                    onCheckedChange={(checked) => updateNotification(key as keyof NotificationSettings, checked)}
                   />
                 </div>
               ))}
+              
+              <Button onClick={handleSaveNotifications} className="w-full mt-6 ">
+                Salvar Notificações
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
