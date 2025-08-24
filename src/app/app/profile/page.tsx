@@ -1,16 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   UserIcon, 
   BellIcon, 
   MessageCircleIcon, 
   MapPinIcon,
   Building2Icon,
-  DollarSignIcon,
-  SettingsIcon,
   CheckIcon,
-  XIcon
+  XIcon,
+  Loader2Icon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,8 +18,19 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ProfilePage() {
+  const { user, userRole, fetchUserData } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    phoneE164: '',
+    city: ''
+  });
+
   const [notifications, setNotifications] = useState({
     weeklyDigest: true,
     newSimilar: true,
@@ -43,6 +53,31 @@ export default function ProfilePage() {
     phone: "+55 11 99999-9999",
     lastSync: "2 horas atrás",
   });
+
+  // Carregar dados do usuário
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const result = await fetchUserData();
+        if (result.data) {
+          setUserData(result.data);
+          setFormData({
+            name: result.data.name || '',
+            phoneE164: result.data.phoneE164 || '',
+            city: result.data.city || ''
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados do usuário:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      loadUserData();
+    }
+  }, [user, fetchUserData]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -75,6 +110,39 @@ export default function ProfilePage() {
     }));
   };
 
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    try {
+      const response = await fetch('/api/auth/me', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        // Recarregar dados do usuário
+        const userResult = await fetchUserData();
+        if (userResult.data) {
+          setUserData(userResult.data);
+        }
+        // TODO: Mostrar toast de sucesso
+        console.log('Perfil atualizado com sucesso');
+      } else {
+        const error = await response.json();
+        console.error('Erro ao atualizar perfil:', error);
+        // TODO: Mostrar toast de erro
+      }
+    } catch (error) {
+      console.error('Erro ao salvar perfil:', error);
+      // TODO: Mostrar toast de erro
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -93,35 +161,71 @@ export default function ProfilePage() {
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserIcon className="w-5 h-5" />
-                Informações Pessoais
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Nome</label>
-                  <Input defaultValue="João Silva" />
+          {loading ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Loader2Icon className="w-8 h-8 animate-spin text-purple-600 mx-auto mb-4" />
+                <p className="text-gray-600">Carregando dados do perfil...</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserIcon className="w-5 h-5" />
+                  Informações Pessoais
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Nome</label>
+                    <Input 
+                      value={formData.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Seu nome completo"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Email</label>
+                    <Input 
+                      value={user?.email || ''} 
+                      type="email" 
+                      disabled
+                      className="bg-gray-50"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Email não pode ser alterado</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Telefone</label>
+                    <Input 
+                      value={formData.phoneE164}
+                      onChange={(e) => setFormData(prev => ({ ...prev, phoneE164: e.target.value }))}
+                      placeholder="+55 11 99999-9999"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Cidade</label>
+                    <Input 
+                      value={formData.city}
+                      onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                      placeholder="Sua cidade"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Email</label>
-                  <Input defaultValue="joao.silva@email.com" type="email" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Telefone</label>
-                  <Input defaultValue="+55 11 99999-9999" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Cidade</label>
-                  <Input defaultValue="São Paulo" />
-                </div>
-              </div>
-              <Button>Salvar Alterações</Button>
-            </CardContent>
-          </Card>
+                <Button disabled={saving} onClick={handleSaveProfile}>
+                  {saving ? (
+                    <>
+                      <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    'Salvar Alterações'
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader>
@@ -130,16 +234,22 @@ export default function ProfilePage() {
             <CardContent>
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">12</div>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {userData?.properties?.length || 0}
+                  </div>
                   <div className="text-sm text-purple-700">Imóveis Salvos</div>
                 </div>
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">3</div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {userData?.memberships?.length || 0}
+                  </div>
                   <div className="text-sm text-blue-700">Grupos Ativos</div>
                 </div>
                 <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">8</div>
-                  <div className="text-sm text-green-700">Comparações</div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {userData?.lists?.length || 0}
+                  </div>
+                  <div className="text-sm text-green-700">Listas Criadas</div>
                 </div>
               </div>
             </CardContent>
@@ -337,20 +447,47 @@ export default function ProfilePage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
+              <div className={`flex items-center justify-between p-4 rounded-lg border ${
+                userData?.phoneE164 ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
+              }`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <CheckIcon className="w-5 h-5 text-green-600" />
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    userData?.phoneE164 ? 'bg-green-100' : 'bg-gray-100'
+                  }`}>
+                    {userData?.phoneE164 ? (
+                      <CheckIcon className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <MessageCircleIcon className="w-5 h-5 text-gray-600" />
+                    )}
                   </div>
                   <div>
-                    <h4 className="font-medium text-green-900">WhatsApp Conectado</h4>
-                    <p className="text-sm text-green-700">{whatsappStatus.phone}</p>
-                    <p className="text-xs text-green-600">Última sincronização: {whatsappStatus.lastSync}</p>
+                    <h4 className={`font-medium ${
+                      userData?.phoneE164 ? 'text-green-900' : 'text-gray-900'
+                    }`}>
+                      {userData?.phoneE164 ? 'WhatsApp Conectado' : 'WhatsApp Não Conectado'}
+                    </h4>
+                    <p className={`text-sm ${
+                      userData?.phoneE164 ? 'text-green-700' : 'text-gray-700'
+                    }`}>
+                      {userData?.phoneE164 || 'Nenhum telefone cadastrado'}
+                    </p>
+                    {userData?.phoneE164 && (
+                      <p className="text-xs text-green-600">
+                        Verificado: {userData?.verified ? 'Sim' : 'Não'}
+                      </p>
+                    )}
                   </div>
                 </div>
-                <Button variant="outline" size="sm">
-                  Desconectar
-                </Button>
+                {userData?.phoneE164 ? (
+                  <Button variant="outline" size="sm">
+                    Desconectar
+                  </Button>
+                ) : (
+                  <Button size="sm">
+                    <MessageCircleIcon className="w-4 h-4 mr-2" />
+                    Conectar
+                  </Button>
+                )}
               </div>
 
               <div className="space-y-3">
@@ -371,10 +508,7 @@ export default function ProfilePage() {
                 </ul>
               </div>
 
-              <Button className="w-full">
-                <MessageCircleIcon className="w-4 h-4 mr-2" />
-                Conectar WhatsApp
-              </Button>
+
             </CardContent>
           </Card>
         </TabsContent>

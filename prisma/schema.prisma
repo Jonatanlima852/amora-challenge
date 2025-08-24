@@ -27,6 +27,7 @@ model User {
   
   // Campos customizados
   name       String?
+  city       String?  // Cidade do usuário
   verified   Boolean  @default(false)  // Telefone verificado
   role       UserRole @default(USER)
   

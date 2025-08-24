@@ -55,7 +55,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="absolute bottom-6 left-4 right-4">
+      {/* <div className="absolute bottom-6 left-4 right-4">
         <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
           <div className="flex items-center gap-2 mb-2">
             <MessageCircleIcon className="w-4 h-4 text-purple-600" />
@@ -72,7 +72,7 @@ export function Sidebar() {
             Conectar
           </Link>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

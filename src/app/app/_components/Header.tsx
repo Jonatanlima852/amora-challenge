@@ -4,9 +4,26 @@ import { useState } from "react";
 import { BellIcon, SearchIcon, UserCircleIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Header() {
   const [searchQuery, setSearchQuery] = useState("");
+  const { user, userRole } = useAuth();
+
+  const getUserDisplayName = () => {
+    if (user?.user_metadata?.name) return user.user_metadata.name;
+    if (user?.email) return user.email.split('@')[0];
+    return "Usuário";
+  };
+
+  const getRoleDisplayName = () => {
+    switch (userRole) {
+      case 'USER': return 'Cliente';
+      case 'BROKER': return 'Corretor';
+      case 'ADMIN': return 'Administrador';
+      default: return 'Cliente';
+    }
+  };
 
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">
@@ -32,8 +49,8 @@ export function Header() {
           
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">João Silva</p>
-              <p className="text-xs text-gray-500">Cliente</p>
+              <p className="text-sm font-medium text-gray-900">{getUserDisplayName()}</p>
+              <p className="text-xs text-gray-500">{getRoleDisplayName()}</p>
             </div>
             <UserCircleIcon className="w-8 h-8 text-gray-400" />
           </div>
