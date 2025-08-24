@@ -106,6 +106,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       password
     });
+
+    console.log(user)
+
     return { error };
   };
 
