@@ -38,6 +38,7 @@ model User {
   events       Event[]
   memberships  HouseholdMember[]
   preferences  UserPreferences?
+  addedItems   ListItem[] // ← ADICIONAR ESTE CAMPO
 
   @@index([phoneE164])
   @@index([email])
@@ -51,6 +52,10 @@ model Household {
 
   members   HouseholdMember[]
   lists     List[]
+  
+  // Adicionar campo para lista padrão do grupo
+  defaultList List? @relation("HouseholdDefaultList", fields: [defaultListId], references: [id])
+  defaultListId String? @unique
 }
 
 model HouseholdMember {
@@ -61,6 +66,10 @@ model HouseholdMember {
   user         User      @relation(fields: [userId], references: [id])
   userId       String
   role         MemberRole @default(MEMBER)
+  status       MembershipStatus @default(PENDING)
+  invitedBy    String?  // ID do usuário que convidou
+  invitedAt    DateTime? // Quando foi convidado
+  respondedAt  DateTime? // Quando respondeu ao convite
 }
 
 enum MemberRole {
@@ -72,6 +81,12 @@ enum UserRole {
   USER
   BROKER
   ADMIN
+}
+
+enum MembershipStatus {
+  PENDING    // Convite pendente
+  ACCEPTED   // Convite aceito
+  DECLINED   // Convite recusado
 }
 
 model Property {
@@ -146,13 +161,19 @@ model List {
   ownerId       String?
   household     Household? @relation(fields: [householdId], references: [id])
   householdId   String?
+  
+  // Relacionamento com lista padrão do household
+  householdDefault Household? @relation("HouseholdDefaultList")
+  
   brokerId      String?
   publicSlug    String?  @unique
+  isDefault     Boolean  @default(false) // Indica se é a lista padrão do grupo
 
   items         ListItem[]
 
   @@index([publicSlug])
   @@index([brokerId])
+  @@index([householdId])
 }
 
 model ListItem {
@@ -165,6 +186,13 @@ model ListItem {
   notes      String?
   favorite   Boolean  @default(false)
   score      Int?
+  
+  // Adicionar campo para indicar quem adicionou ao grupo
+  addedBy    User?    @relation(fields: [addedById], references: [id])
+  addedById  String?
+  
+  @@index([listId])
+  @@index([propertyId])
 }
 
 model Comment {
