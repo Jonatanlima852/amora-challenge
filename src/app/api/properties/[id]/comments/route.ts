@@ -19,7 +19,7 @@ async function getAuthenticatedUser(request: NextRequest) {
 // GET /api/properties/[id]/comments - Listar comentários da propriedade
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthenticatedUser(request);
@@ -30,7 +30,7 @@ export async function GET(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Verificar se a propriedade pertence ao usuário
     const property = await prisma.property.findFirst({
@@ -89,7 +89,7 @@ export async function GET(
 // POST /api/properties/[id]/comments - Adicionar comentário
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthenticatedUser(request);
@@ -100,7 +100,7 @@ export async function POST(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { text, isAnonymous = false } = body;
 

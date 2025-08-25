@@ -19,7 +19,7 @@ async function getAuthenticatedUser(request: NextRequest) {
 // GET /api/properties/[id] - Buscar propriedade específica
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthenticatedUser(request);
@@ -30,7 +30,7 @@ export async function GET(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Buscar propriedade do usuário
     const property = await prisma.property.findFirst({
@@ -109,7 +109,7 @@ export async function GET(
 // PUT /api/properties/[id] - Atualizar propriedade
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthenticatedUser(request);
@@ -120,7 +120,7 @@ export async function PUT(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     // Verificar se a propriedade pertence ao usuário
@@ -173,7 +173,7 @@ export async function PUT(
 // DELETE /api/properties/[id] - Deletar propriedade
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthenticatedUser(request);
@@ -184,7 +184,7 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Verificar se a propriedade pertence ao usuário
     const existingProperty = await prisma.property.findFirst({
