@@ -74,7 +74,7 @@ const mockBroker: Broker = {
 }
 
 export default async function BrokerPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+  // const { slug } = await params; // TODO: Implementar busca por slug
   const broker = mockBroker // Em produção, buscar por slug
 
   return (

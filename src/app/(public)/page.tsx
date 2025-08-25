@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Home, Link as LinkIcon, TrendingUp, Target, Sparkles, User, LogIn, MessageCircle, BarChart3, Users, Star } from "lucide-react"
+import { Home, Link as LinkIcon, TrendingUp, Target, User, LogIn, MessageCircle, BarChart3, Users, Star } from "lucide-react"
 import Link from "next/link"
 
 export default function HomePage() {

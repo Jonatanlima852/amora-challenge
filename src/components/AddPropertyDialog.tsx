@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 interface AddPropertyDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onPropertyAdded?: (property: any) => void;
+  onPropertyAdded?: (property: { id: string; title: string; sourceUrl: string }) => void;
 }
 
 export function AddPropertyDialog({ open, onOpenChange, onPropertyAdded }: AddPropertyDialogProps) {

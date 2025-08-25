@@ -58,7 +58,7 @@ export default function BrokerGroups() {
   const router = useRouter();
   const [groups, setGroups] = useState<Group[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  // const [selectedGroup, setSelectedGroup] = useState<Group | null>(null); // TODO: Implementar seleção de grupo
 
   useEffect(() => {
     if (!loading && userRole !== 'BROKER' && userRole !== 'ADMIN') {

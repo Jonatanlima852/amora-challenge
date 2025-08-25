@@ -74,6 +74,7 @@ export interface PropertyPreferences {
   neighborhoods: string[];
   propertyTypes: string[];
   minParking: number;
+  notifications?: NotificationSettings;
 }
 
 export interface WhatsAppStatus {

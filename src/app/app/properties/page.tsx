@@ -24,7 +24,7 @@ interface Property {
   city: string;
   state: string;
   score: number;
-  photos: any;
+  photos: string[];
   sourceUrl: string;
   status: string;
   createdAt: string;
@@ -386,8 +386,7 @@ export default function PropertiesPage() {
       <AddPropertyDialog 
         open={showAddDialog} 
         onOpenChange={setShowAddDialog}
-        onPropertyAdded={(property) => {
-          setProperties([property, ...properties]);
+        onPropertyAdded={() => {
           fetchProperties();
         }}
       />

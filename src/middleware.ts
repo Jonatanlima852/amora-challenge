@@ -9,7 +9,7 @@ const PUBLIC_PATHS = new Set<string>([
 
 const PROTECTED_PATHS = new Set<string>([
 	'/app',
-	'/broker'
+	// '/broker'
 ]);
 
 function isPublic(pathname: string) {
@@ -59,11 +59,11 @@ export function middleware(req: NextRequest) {
 		try {
 			const auth = JSON.parse(raw) as AuthCookie;
 
-			// Bloqueio de área do corretor
-			if (pathname.startsWith('/broker') && auth.role !== 'BROKER' && auth.role !== 'ADMIN') {
-				const url = new URL('/properties', req.url);
-				return NextResponse.redirect(url);
-			}
+			// // Bloqueio de área do corretor
+			// if (pathname.startsWith('/broker') && auth.role !== 'BROKER' && auth.role !== 'ADMIN') {
+			// 	const url = new URL('/properties', req.url);
+			// 	return NextResponse.redirect(url);
+			// }
 
 			return NextResponse.next();
 		} catch {

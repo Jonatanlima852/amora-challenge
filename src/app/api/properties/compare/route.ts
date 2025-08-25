@@ -65,7 +65,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Calcular análise comparativa
-    const analysis = generateComparisonAnalysis(properties);
+    const analysis = generateComparisonAnalysis(
+      properties.map(p => ({
+        id: p.id,
+        title: p.title,
+        price: p.price as number | null,
+        m2: p.m2 as number | null,
+        score: p.score as number | null,
+        neigh: (p as any).neigh ?? null,
+      }))
+    );
 
     return NextResponse.json({
       success: true,
@@ -83,19 +92,35 @@ export async function POST(request: NextRequest) {
 }
 
 // Função para gerar análise comparativa
-function generateComparisonAnalysis(properties: any[]) {
+type AnalyzableProperty = {
+  id: string;
+  title: string | null;
+  price: number | null;
+  m2: number | null;
+  score: number | null;
+  neigh?: string | null;
+};
+
+function generateComparisonAnalysis(properties: AnalyzableProperty[]) {
   if (properties.length === 0) return null;
 
-  const prices = properties.map(p => p.price).filter(Boolean);
-  const areas = properties.map(p => p.m2).filter(Boolean);
-  const scores = properties.map(p => p.score).filter(Boolean);
+  const prices = properties
+    .map(p => p.price)
+    .filter((n): n is number => typeof n === 'number');
+  const areas = properties
+    .map(p => p.m2)
+    .filter((n): n is number => typeof n === 'number');
+  const scores = properties
+    .map(p => p.score)
+    .filter((n): n is number => typeof n === 'number');
 
   const avgPrice = prices.length > 0 ? prices.reduce((a, b) => a + b, 0) / prices.length : 0;
   const avgArea = areas.length > 0 ? areas.reduce((a, b) => a + b, 0) / areas.length : 0;
   const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
 
   // Encontrar melhor custo-benefício
-  const bestValue = properties.reduce((best, current) => {
+  type BestValue = { property: AnalyzableProperty; ratio: number } | null;
+  const bestValue = properties.reduce<BestValue>((best, current) => {
     if (!current.score || !current.price) return best;
     const valueRatio = current.score / (current.price / 1000000); // Score por milhão
     if (!best || valueRatio > best.ratio) {
@@ -147,8 +172,8 @@ function generateComparisonAnalysis(properties: any[]) {
   }
 
   // Análise de preços
-  const priceRange = Math.max(...prices) - Math.min(...prices);
-  if (priceRange > avgPrice * 0.5) {
+  const priceRange = prices.length > 0 ? Math.max(...prices) - Math.min(...prices) : 0;
+  if (prices.length > 0 && priceRange > avgPrice * 0.5) {
     analysis.recommendations.push({
       type: 'price_variation',
       message: 'Há uma variação significativa de preços entre as opções selecionadas',

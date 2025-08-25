@@ -3,18 +3,19 @@
 import { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { PropertyPreferences } from '@/types/app';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   userRole: 'USER' | 'BROKER' | 'ADMIN' | null;
   loading: boolean;
-  signUp: (email: string, password: string, metadata?: { name?: string; phone?: string; role?: 'USER' | 'BROKER' | 'ADMIN' }) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, metadata?: { name?: string; phone?: string; role?: 'USER' | 'BROKER' | 'ADMIN' }) => Promise<{ error: string | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
-  updatePhone: (phone: string) => Promise<{ error: any }>;
-  establishServerSession: () => Promise<{ error: any; data?: any }>;
-  fetchUserData: () => Promise<{ error: any; data?: any }>;
+  updatePhone: (phone: string) => Promise<{ error: string | null }>;
+  establishServerSession: () => Promise<{ error: string | null; data?: { userId: string; role: string } }>;
+  fetchUserData: () => Promise<{ error: string | null; data?: { id: string; name: string; email: string; role: string; verified: boolean; phoneE164?: string; city?: string; preferences?: PropertyPreferences } }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -107,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         data: metadata
       }
     });
-    return { error };
+    return { error: error ? error.message : null };
   };
 
   const signIn = async (email: string, password: string) => {
@@ -120,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Erro no signIn:', error);
     }
 
-    return { error };
+    return { error: error ? error.message : null };
   };
 
   const signOut = async () => {

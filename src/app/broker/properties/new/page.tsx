@@ -15,14 +15,7 @@ import {
   ArrowLeft, 
   Plus, 
   Link as LinkIcon, 
-  Building2, 
   MapPin, 
-  DollarSign, 
-  Ruler, 
-  Car,
-  Bath,
-  Bed,
-  Upload,
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
@@ -33,7 +26,18 @@ export default function BrokerNewProperty() {
   const [isLoading, setIsLoading] = useState(false);
   const [propertyUrl, setPropertyUrl] = useState('');
   const [parsingStatus, setParsingStatus] = useState<'idle' | 'parsing' | 'success' | 'error'>('idle');
-  const [parsedData, setParsedData] = useState<any>(null);
+  const [parsedData, setParsedData] = useState<{
+    title: string;
+    price: number;
+    area: number;
+    bedrooms: number;
+    bathrooms: number;
+    parking: number;
+    neighborhood: string;
+    city: string;
+    description: string;
+    propertyType: string;
+  } | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({

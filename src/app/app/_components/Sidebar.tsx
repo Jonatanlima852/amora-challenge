@@ -34,7 +34,7 @@ export function Sidebar() {
   const [syncPhone, setSyncPhone] = useState('');
   const [syncCount, setSyncCount] = useState(0);
   const { user, fetchUserData } = useAuth();
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<{ verified?: boolean } | null>(null);
   const [hasCheckedInitial, setHasCheckedInitial] = useState(false);
 
   // Verificar status do usuário apenas uma vez na montagem
@@ -72,6 +72,7 @@ export function Sidebar() {
 
   const handlePhoneVerified = useCallback(async (phone: string) => {
     // Atualizar dados do usuário após verificação
+    // TODO: Usar phone se necessário
     try {
       const result = await fetchUserData();
       if (result.data?.verified) {

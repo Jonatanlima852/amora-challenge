@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -13,16 +13,15 @@ import {
   Building2, 
   Plus, 
   Search, 
-  Filter, 
   MapPin, 
-  DollarSign, 
-  Ruler, 
-  Car,
   Star,
   Eye,
   Edit,
   Trash2,
-  BarChart3
+  BarChart3,
+  DollarSign,
+  Ruler,
+  Car
 } from 'lucide-react';
 
 interface Property {

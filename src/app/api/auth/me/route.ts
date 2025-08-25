@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     try {
       authData = JSON.parse(authCookie);
     } catch (error) {
+      console.error('Erro ao fazer parse do cookie:', error);
       return NextResponse.json({ error: 'Cookie inválido' }, { status: 400 });
     }
 
@@ -93,6 +94,7 @@ export async function PATCH(request: NextRequest) {
     try {
       authData = JSON.parse(authCookie);
     } catch (error) {
+      console.error('Erro ao fazer parse do cookie:', error);
       return NextResponse.json({ error: 'Cookie inválido' }, { status: 400 });
     }
 

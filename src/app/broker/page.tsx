@@ -16,14 +16,13 @@ import {
   MessageCircle,
   TrendingUp,
   Star,
-  DollarSign,
   Calendar
 } from 'lucide-react';
 
 export default function BrokerHome() {
   const { userRole, loading } = useAuth();
   const router = useRouter();
-  const [stats, setStats] = useState({
+  const [stats] = useState({
     totalProperties: 24,
     activeProperties: 18,
     totalContacts: 45,

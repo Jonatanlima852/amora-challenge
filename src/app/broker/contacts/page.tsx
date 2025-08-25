@@ -13,11 +13,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Users, 
   Search, 
-  Filter, 
   MessageCircle, 
   Phone, 
   Mail,
-  Calendar,
   MapPin,
   Building2,
   Star,

@@ -44,7 +44,7 @@ interface GroupProperty {
   price: number;
   m2: number;
   score: number;
-  photos: any;
+  photos: string[];
   notes: string;
   favorite: boolean;
   addedAt: string;

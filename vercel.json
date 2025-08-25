@@ -1,0 +1,12 @@
+{
+  "buildCommand": "npm run build",
+  "ignoreCommand": "echo 'Build ignorado'",
+  "functions": {
+    "app/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "NEXT_TELEMETRY_DISABLED": "1"
+  }
+}

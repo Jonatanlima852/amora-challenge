@@ -30,7 +30,7 @@ export function PropertyList({
 
   // Filtrar e ordenar propriedades
   useEffect(() => {
-    let filtered = properties.filter(property =>
+    const filtered = properties.filter(property =>
       property.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       property.neigh?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       property.city?.toLowerCase().includes(searchTerm.toLowerCase())

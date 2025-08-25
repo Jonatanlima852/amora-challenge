@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { BarChart3, Link as LinkIcon, Plus, Trash2, Sparkles, Download, MessageCircle } from "lucide-react"
+import { BarChart3, Link as LinkIcon, Plus, Trash2, Sparkles, MessageCircle } from "lucide-react"
 import Link from "next/link"
 
 interface Property {

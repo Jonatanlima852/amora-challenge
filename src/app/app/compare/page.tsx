@@ -21,7 +21,7 @@ interface Property {
   city: string;
   state: string;
   score: number;
-  photos: any;
+  photos: string[];
   sourceUrl: string;
   status: string;
   createdAt: string;

@@ -25,7 +25,6 @@ import {
   Link as LinkIcon,
   Copy,
   CheckCircle,
-  AlertCircle,
   Plus
 } from 'lucide-react';
 

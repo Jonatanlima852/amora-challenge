@@ -26,9 +26,9 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userData, setUserData] = useState<{
-    properties?: any[];
-    memberships?: any[];
-    lists?: any[];
+    properties?: Array<{ id: string; title: string; price: number; m2: number; score: number }>;
+    memberships?: Array<{ id: string; name: string; role: string }>;
+    lists?: Array<{ id: string; name: string; itemCount: number }>;
     preferences?: PropertyPreferences;
     phoneE164?: string;
     verified?: boolean;
@@ -130,7 +130,7 @@ export default function ProfilePage() {
     setNotifications(prev => ({ ...prev, [key]: value }));
   };
 
-  const updatePreference = (key: keyof PropertyPreferences, value: any) => {
+  const updatePreference = (key: keyof PropertyPreferences, value: string | number | string[]) => {
     setPreferences(prev => ({ ...prev, [key]: value }));
   };
 

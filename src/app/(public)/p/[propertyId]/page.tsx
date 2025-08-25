@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { MapPin, Bed, Bath, Car, Ruler, Star, MessageCircle, Share2, Home, BarChart3 } from "lucide-react"
+import { MapPin, Bed, Bath, Car, Star, MessageCircle, Share2, Home, BarChart3 } from "lucide-react"
 import Link from "next/link"
 
 interface Property {
@@ -40,7 +40,7 @@ const mockProperty: Property = {
 }
 
 export default async function PropertyPage({ params }: { params: Promise<{ propertyId: string }> }) {
-  const { propertyId } = await params;
+  // const { propertyId } = await params; // TODO: Implementar busca por ID
   const property = mockProperty // Em produção, buscar por ID
 
   return (
