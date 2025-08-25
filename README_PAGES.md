@@ -35,12 +35,7 @@
 - `/corretor/page` — Página pública
 - `/corretor/contacts` — Leads
 
-### Admin
-- `/admin` — Overview
-- `/admin/properties` — Moderação
-- `/admin/users` — Usuários
-- `/admin/brokers` — Corretores
-- `/admin/settings` — Configurações
+
 
 ---## UX & Telas
 
@@ -98,22 +93,6 @@
 - **Propriedades**: cadastrar por URL
 - **Contatos**: leads + opção de reativar
 
-### 11. Admin
-- **Overview**: jobs, fila, erros
-- **Propriedades**: dedup, merge
-- **Usuários/Corretores**: papéis, slugs
-- **Configurações**: templates WhatsApp, limites
-
----
-
-## Componentes Reutilizáveis
-
-- `PropertyCard`, `PropertyTable`, `CompareTable`, `ScoreBadge`
-- `GroupFeed`, `Comment`, `ReactionBar`, `InviteLink`
-- `FiltersBar`, `Chip`, `EmptyState`
-- `BrokerHero`, `HighlightGrid`, `ExportPngButton`
-- `WhatsappCTAButton`
-- `CaptchaGate`
 
 ---
 ## APIs & Webhooks
@@ -124,7 +103,6 @@
 - **Grupos**: `/api/groups`, `/api/groups/join`, `/api/groups/:id/comment`
 - **Compare público**: `/api/compare/public`
 - **Corretor**: `/api/broker/page`, `/api/broker/highlights`
-- **Admin**: `/api/admin/health`, `/api/admin/queue`
 
 ---
 
