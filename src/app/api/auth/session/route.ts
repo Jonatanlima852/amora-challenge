@@ -28,8 +28,17 @@ export async function POST(request: NextRequest) {
     // Se não existir, criar automaticamente
     if (!dbUser) {
       
-      dbUser = await prisma.user.create({
-        data: {
+      // Usar upsert para evitar conflitos de chave única
+      dbUser = await prisma.user.upsert({
+        where: {
+          email: user.email
+        },
+        update: {
+          supabaseId: user.id,
+          name: user.user_metadata?.name || null,
+          phoneE164: user.user_metadata?.phone || null,
+        },
+        create: {
           supabaseId: user.id,
           email: user.email,
           name: user.user_metadata?.name || null,
