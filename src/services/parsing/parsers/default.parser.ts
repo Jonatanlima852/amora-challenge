@@ -22,7 +22,8 @@ export async function parseDefault(url: string, config: ParserConfig): Promise<P
     const property: ParsedProperty = {
       sourceUrl: url,
       parsedAt: new Date(),
-      parser: 'default'
+      parser: 'default',
+      title: 'Imóvel sem título' // Adicionar título padrão obrigatório
     };
 
     // Título
