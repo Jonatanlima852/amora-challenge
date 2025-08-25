@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { normalizePhoneE164 } from '@/utils/common.utils';
+import { normalizePhoneE164, getBrazilPhoneE164Candidates } from '@/utils/common.utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,6 +11,9 @@ export async function POST(request: NextRequest) {
     }
 
     const phoneE164 = normalizePhoneE164(phone);
+    
+    console.log('🔐 API confirm: Verificando código para telefone:', phoneE164);
+    console.log('🔐 API confirm: Código recebido:', code);
     
     // Buscar verificação válida
     const verification = await prisma.phoneVerification.findFirst({
@@ -23,11 +26,15 @@ export async function POST(request: NextRequest) {
     });
 
     if (!verification) {
+      console.log('❌ API confirm: Código inválido ou expirado');
       return NextResponse.json({ error: 'Código inválido ou expirado' }, { status: 400 });
     }
 
+    console.log('✅ API confirm: Verificação encontrada, verificando tentativas...');
+
     // Verificar limite de tentativas
     if (verification.attempts >= 3) {
+      console.log('❌ API confirm: Muitas tentativas, bloqueando');
       return NextResponse.json({ error: 'Muitas tentativas. Solicite um novo código' }, { status: 429 });
     }
 
@@ -37,23 +44,44 @@ export async function POST(request: NextRequest) {
       data: { attempts: verification.attempts + 1 }
     });
 
+    console.log('✅ API confirm: Tentativas incrementadas, marcando como verificado...');
+
     // Marcar como verificado
     await prisma.phoneVerification.update({
       where: { id: verification.id },
       data: { verified: true }
     });
 
-    // Atualizar usuário no banco (se existir)
+    console.log('✅ API confirm: Verificação marcada como true, atualizando usuário...');
+
+    // Buscar usuário usando candidatos de telefone para garantir match
+    const phoneCandidates = getBrazilPhoneE164Candidates(phone);
+    console.log('🔍 API confirm: Buscando usuário com candidatos:', phoneCandidates);
+    
     const user = await prisma.user.findFirst({
-      where: { phoneE164 }
+      where: {
+        OR: phoneCandidates.map((candidate) => ({ phoneE164: candidate }))
+      }
     });
 
     if (user) {
+      console.log('✅ API confirm: Usuário encontrado, atualizando campo verified...');
+      console.log('✅ API confirm: Usuário ID:', user.id, 'Telefone armazenado:', user.phoneE164);
+      
       await prisma.user.update({
         where: { id: user.id },
-        data: { verified: true }
+        data: { 
+          verified: true,
+          updatedAt: new Date()
+        }
       });
+      console.log('✅ API confirm: Usuário atualizado com sucesso, ID:', user.id);
+    } else {
+      console.log('⚠️ API confirm: Usuário não encontrado para telefone:', phoneE164);
+      console.log('⚠️ API confirm: Candidatos testados:', phoneCandidates);
     }
+
+    console.log('✅ API confirm: Verificação concluída com sucesso');
 
     return NextResponse.json({ 
       success: true, 
@@ -62,7 +90,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Erro ao confirmar verificação:', error);
+    console.error('❌ API confirm: Erro ao confirmar verificação:', error);
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
   }
 }

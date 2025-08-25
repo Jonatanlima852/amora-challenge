@@ -74,16 +74,16 @@ export function middleware(req: NextRequest) {
 
 	// Ignora recursos públicos e APIs
 	if (isPublic(pathname)) {
-		// Se já estiver logado e tentar ir para página pública de auth, redireciona para home correta
+		// Se já estiver logado e tentar ir para página pública de auth, redireciona para /app
 		const raw = req.cookies.get('amora_auth')?.value;
 		if (raw && (pathname === '/' || pathname.startsWith('/auth'))) {
 			try {
 				const auth = JSON.parse(raw) as AuthCookie;
-				const dest = auth.role === 'BROKER' || auth.role === 'ADMIN' ? '/broker' : '/properties';
-				const url = new URL(dest, req.url);
+				// Sempre redireciona para /app se tiver cookie válido
+				const url = new URL('/app', req.url);
 				return NextResponse.redirect(url);
-			} catch {
-				// segue
+			} catch (error) {
+				console.error('❌ Middleware: Erro ao parsear cookie:', error);
 			}
 		}
 		return NextResponse.next();

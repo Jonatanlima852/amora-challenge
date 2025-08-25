@@ -17,10 +17,10 @@ export default function LoginPage() {
   const { signIn, userRole, session } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
+  useEffect(() => {  
     if (session && userRole) {
-      // Redirecionar imediatamente após login bem-sucedido
-      const dest = userRole === 'BROKER' || userRole === 'ADMIN' ? '/broker' : '/properties';
+      // Redirecionar sempre para /app após login bem-sucedido
+      const dest = userRole === 'BROKER' || userRole === 'ADMIN' ? '/broker' : '/app';
       router.push(dest);
     }
   }, [session, userRole, router]);

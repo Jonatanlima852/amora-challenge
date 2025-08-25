@@ -14,28 +14,51 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 });
     }
 
-    // Buscar usuário no Prisma (não criar automaticamente)
-    const dbUser = await prisma.user.findFirst({
-      where: { supabaseId: user.id },
-      select: { id: true, name: true, email: true, role: true, phoneE164: true, verified: true }
+    // Buscar usuário no Prisma por supabaseId OU email
+    let dbUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { supabaseId: user.id },
+          { email: user.email }
+        ]
+      },
+      select: { id: true, name: true, email: true, role: true, phoneE164: true, verified: true, supabaseId: true }
     });
 
+    // Se não existir, criar automaticamente
     if (!dbUser) {
-      // Usuário não existe no Prisma - retornar erro
-      return NextResponse.json({ 
-        error: 'Usuário não encontrado. É necessário verificar o telefone via WhatsApp primeiro.' 
-      }, { status: 404 });
+      
+      dbUser = await prisma.user.create({
+        data: {
+          supabaseId: user.id,
+          email: user.email,
+          name: user.user_metadata?.name || null,
+          phoneE164: user.user_metadata?.phone || null,
+          role: 'USER',
+          verified: false
+        },
+        select: { id: true, name: true, email: true, role: true, phoneE164: true, verified: true, supabaseId: true }
+      });
+      
+    } else if (!dbUser.supabaseId) {
+      // Se existir mas não tiver supabaseId, atualizar
+      
+      await prisma.user.update({
+        where: { id: dbUser.id },
+        data: { supabaseId: user.id }
+      });
     }
 
     // Criar cookie seguro com dados do usuário
     const authData = {
-      userId: dbUser?.id,
-      role: dbUser?.role,
-      email: dbUser?.email,
-      name: dbUser?.name,
-      phoneE164: dbUser?.phoneE164,
-      verified: dbUser?.verified
+      userId: dbUser.id,
+      role: dbUser.role,
+      email: dbUser.email,
+      name: dbUser.name,
+      phoneE164: dbUser.phoneE164,
+      verified: dbUser.verified
     };
+
 
     const response = NextResponse.json({ 
       success: true, 
@@ -51,6 +74,7 @@ export async function POST(request: NextRequest) {
       path: '/'
     });
 
+
     return response;
 
   } catch (error) {
@@ -61,15 +85,27 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    
     const response = NextResponse.json({ success: true });
     
-    // Limpar cookie de autenticação
+    // Limpar cookie de autenticação de forma mais agressiva
     response.cookies.set('amora_auth', '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 0,
+      expires: new Date(0),
       path: '/'
+    });
+
+    // Também limpar com path específico
+    response.cookies.set('amora_auth', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 0,
+      expires: new Date(0),
+      path: '/app'
     });
 
     return response;

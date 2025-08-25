@@ -36,7 +36,7 @@ export default function AuthCallbackPage() {
           
           // Aguardar um pouco para mostrar a mensagem
           setTimeout(() => {
-            router.push('/properties');
+            router.push('/app');
           }, 2000);
         } else {
           // Usuário não autenticado

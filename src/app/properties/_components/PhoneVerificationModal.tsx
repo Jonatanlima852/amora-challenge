@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +22,14 @@ export function PhoneVerificationModal({ isOpen, onClose, onVerified, onRequireA
   const [verificationCode, setVerificationCode] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { updatePhone } = useAuth();
+  const { updatePhone, fetchUserData } = useAuth();
+
+  // Log apenas quando o modal abrir/fechar ou mudar de step
+  useEffect(() => {
+    if (isOpen) {
+      console.log('🔍 PhoneVerificationModal - Modal aberto, step:', step);
+    }
+  }, [isOpen, step]);
 
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, '');
@@ -38,6 +45,7 @@ export function PhoneVerificationModal({ isOpen, onClose, onVerified, onRequireA
   };
 
   const handlePhoneSubmit = async () => {
+    
     if (!phone.replace(/\D/g, '').match(/^\d{10,11}$/)) {
       toast.error('Telefone inválido');
       return;
@@ -50,8 +58,19 @@ export function PhoneVerificationModal({ isOpen, onClose, onVerified, onRequireA
       const { error } = await updatePhone(phone.replace(/\D/g, ''));
       if (error) throw error;
 
+      // Verificar se o usuário atual já tem supabaseId
+      const currentUser = await fetchUserData();
+        // Se o usuário já tem supabaseId OU se o telefone já está verificado, não precisa sincronizar
+      if (currentUser.data?.supabaseId || currentUser.data?.verified) {
+        // Se já tem supabaseId ou está verificado, não precisa sincronizar, apenas verificar
+        await handleSendVerificationCode(phone.replace(/\D/g, ''));
+        setStep('verification');
+        return;
+      }
+
       // Verificar se já existe usuário com este telefone
       const { exists, count } = await checkExistingUser(phone.replace(/\D/g, ''));
+      
       if (exists) {
         onRequireAssociation?.(phone.replace(/\D/g, ''), count);
         onClose();
@@ -97,6 +116,7 @@ export function PhoneVerificationModal({ isOpen, onClose, onVerified, onRequireA
       onVerified(phone.replace(/\D/g, ''));
       onClose();
     } catch (error) {
+      console.error('❌ PhoneVerificationModal - Error in verification:', error);
       toast.error('Código inválido. Tente novamente.');
     } finally {
       setLoading(false);

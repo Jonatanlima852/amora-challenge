@@ -66,23 +66,80 @@ export function normalizePhoneE164(input: string): string {
 }
 
 /**
- * Retorna candidatos E.164 considerando variações com/sem o "9" logo após o DDD
+ * Retorna candidatos E.164 considerando todas as variações possíveis de telefone brasileiro
  * Exemplos de entrada aceitos: 62993234763, 5562993234763, 556293234763
+ * Retorna todas as possibilidades para garantir match na busca
  */
 export function getBrazilPhoneE164Candidates(input: string): string[] {
-  const base = normalizePhoneE164(input);
-  const local = base.slice(2); // remove 55
-  const candidates = new Set<string>([base]);
-
-  if (local.length === 10) {
-    // insere '9' após DDD
-    candidates.add('55' + local.slice(0, 2) + '9' + local.slice(2));
-  } else if (local.length === 11 && local[2] === '9') {
-    // remove '9' após DDD
-    candidates.add('55' + local.slice(0, 2) + local.slice(3));
+  // Normalizar entrada removendo caracteres especiais
+  let phone = input.replace(/@s\.whatsapp\.net$/, '').replace(/\D/g, '');
+  
+  const candidates = new Set<string>();
+  
+  // Se começa com 55, remover para processar
+  if (phone.startsWith('55')) {
+    phone = phone.slice(2);
   }
-
-  return Array.from(candidates);
+  
+  // Agora phone é o número local (ex: 62993234763 ou 6293234763)
+  
+  if (phone.length === 11) {
+    // Formato: DDD + 9 + número (ex: 62993234763)
+    const ddd = phone.slice(0, 2);
+    const nine = phone.slice(2, 3);
+    const number = phone.slice(3);
+    
+    // Adicionar todas as variações possíveis
+    candidates.add('55' + ddd + nine + number);        // 5562993234763 (com 55, com 9)
+    candidates.add('55' + ddd + number);               // 556293234763 (com 55, sem 9)
+    candidates.add(ddd + nine + number);               // 62993234763 (sem 55, com 9)
+    candidates.add(ddd + number);                      // 6293234763 (sem 55, sem 9)
+    
+  } else if (phone.length === 10) {
+    // Formato: DDD + número (ex: 6293234763)
+    const ddd = phone.slice(0, 2);
+    const number = phone.slice(2);
+    
+    // Adicionar todas as variações possíveis
+    candidates.add('55' + ddd + number);               // 556293234763 (com 55, sem 9)
+    candidates.add('55' + ddd + '9' + number);        // 5562993234763 (com 55, com 9)
+    candidates.add(ddd + number);                      // 6293234763 (sem 55, sem 9)
+    candidates.add(ddd + '9' + number);               // 62993234763 (sem 55, com 9)
+    
+  } else if (phone.length === 13) {
+    // Formato: 55 + DDD + 9 + número (ex: 5562993234763)
+    const ddd = phone.slice(2, 4);
+    const nine = phone.slice(4, 5);
+    const number = phone.slice(5);
+    
+    // Adicionar todas as variações possíveis
+    candidates.add(phone);                             // 5562993234763 (original)
+    candidates.add('55' + ddd + number);               // 556293234763 (sem 9)
+    candidates.add(ddd + nine + number);               // 62993234763 (sem 55, com 9)
+    candidates.add(ddd + number);                      // 6293234763 (sem 55, sem 9)
+    
+  } else if (phone.length === 12) {
+    // Formato: 55 + DDD + número (ex: 556293234763)
+    const ddd = phone.slice(2, 4);
+    const number = phone.slice(4);
+    
+    // Adicionar todas as variações possíveis
+    candidates.add(phone);                             // 556293234763 (original)
+    candidates.add('55' + ddd + '9' + number);        // 5562993234763 (com 9)
+    candidates.add(ddd + number);                      // 6293234763 (sem 55, sem 9)
+    candidates.add(ddd + '9' + number);               // 62993234763 (sem 55, com 9)
+  }
+  
+  // Adicionar também o número original normalizado
+  candidates.add(normalizePhoneE164(input));
+  
+  // Filtrar apenas números válidos (10-13 dígitos)
+  const validCandidates = Array.from(candidates).filter(candidate => 
+    candidate.length >= 10 && candidate.length <= 13
+  );
+  
+  
+  return validCandidates;
 }
 
 /** Número nacional (sem 55), somente dígitos */

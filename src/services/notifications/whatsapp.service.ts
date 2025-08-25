@@ -14,20 +14,19 @@ export class WhatsAppService {
     try {
       const formattedNumber = to.includes('@s.whatsapp.net') ? to : `${to}@s.whatsapp.net`;
 
-      const response = await fetch(
-        `${WHATSAPP_CONFIG.API_URL}/message/sendText/${WHATSAPP_CONFIG.INSTANCE_NAME}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': WHATSAPP_CONFIG.API_KEY
-          },
-          body: JSON.stringify({ 
-            number: formattedNumber,
-            text: body 
-          })
-        }
-      );
+      const url = `${WHATSAPP_CONFIG.API_URL}/message/sendText/${WHATSAPP_CONFIG.INSTANCE_NAME}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': WHATSAPP_CONFIG.API_KEY
+        },
+        body: JSON.stringify({ 
+          number: formattedNumber,
+          text: body 
+        })
+      });
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -36,7 +35,6 @@ export class WhatsAppService {
       }
 
       const result = await response.json();
-      console.log('Mensagem enviada com sucesso:', result);
       return true;
 
     } catch (error) {
@@ -80,7 +78,6 @@ export class WhatsAppService {
       }
 
       const result = await response.json();
-      console.log('Mídia enviada com sucesso:', result);
       return true;
 
     } catch (error) {
@@ -113,5 +110,17 @@ export class WhatsAppService {
       console.error('Erro ao verificar status da instância:', error);
       return false;
     }
+  }
+
+  /**
+   * Envia código de verificação específico
+   */
+  static async sendVerificationCode(
+    phone: string,
+    code: string
+  ): Promise<boolean> {
+    const message = `🔐 Seu código de verificação aMORA: *${code}*\n\n⏰ Este código expira em 10 minutos.\n\n⚠️ Não compartilhe este código com ninguém.`;
+    
+    return await this.sendMessage(phone, message);
   }
 }

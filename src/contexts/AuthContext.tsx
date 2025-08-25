@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useRef } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
@@ -40,6 +40,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const data = await response.json();
         if (data.user?.role) {
           setUserRole(data.user.role);
+        }
+      } else {
+        // Se der 401, tentar estabelecer sessão novamente
+        if (response.status === 401) {
+          const sessionResult = await establishServerSession();
+          if (!sessionResult.error) {
+            // Tentar buscar papel novamente
+            await fetchUserRole();
+          }
         }
       }
     } catch (error) {
@@ -107,7 +116,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password
     });
 
-    console.log(user)
+    if (error) {
+      console.error('Erro no signIn:', error);
+    }
 
     return { error };
   };
@@ -115,24 +126,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     setUserRole(null);
     
-    // Limpar sessão server-side
+    // Limpar sessão server-side primeiro
     try {
-      await fetch('/api/auth/session', { method: 'DELETE' });
+      const response = await fetch('/api/auth/session', { 
+        method: 'DELETE',
+        credentials: 'include'
+      });
     } catch (error) {
       console.error('Erro ao limpar sessão server-side:', error);
     }
     
+    // Limpar sessão do Supabase
     await supabase.auth.signOut();
+    
+    // Forçar limpeza do estado local
+    setUser(null);
+    setSession(null);
+    setUserRole(null);
   };
 
-  const updatePhone = async (phone: string) => {
-    const { error } = await supabase.auth.updateUser({
-      data: { phone }
-    });
-    return { error };
-  };
+  const updatePhone = useCallback(async (phone: string) => {
+    try {
+      // Atualizar telefone diretamente na tabela public.users via API
+      const response = await fetch('/api/auth/update-phone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ phone })
+      });
 
-  const establishServerSession = async () => {
+      if (response.ok) {
+        return { error: null };
+      } else {
+        const errorData = await response.json();
+        return { error: errorData.error || 'Erro ao atualizar telefone' };
+      }
+    } catch (error) {
+      console.error('Erro de conexão ao atualizar telefone:', error);
+      return { error: 'Erro de conexão' };
+    }
+  }, []);
+
+  const establishServerSession = useCallback(async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
@@ -157,14 +192,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: null, data };
       }
       
-      const error = await response.json();
-      return { error: error.error || 'Erro ao estabelecer sessão' };
+      // Se der erro, tentar entender o que aconteceu
+      const errorData = await response.json();
+      return { error: errorData.error || 'Erro ao estabelecer sessão' };
     } catch (error) {
+      console.error('Erro de conexão ao estabelecer sessão:', error);
       return { error: 'Erro de conexão' };
     }
-  };
+  }, []);
 
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     try {
       const response = await fetch('/api/auth/me', {
         method: 'GET',
@@ -179,9 +216,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const error = await response.json();
       return { error: error.error || 'Erro ao buscar dados do usuário' };
     } catch (error) {
+      console.error('Erro de conexão ao buscar dados do usuário:', error);
       return { error: 'Erro de conexão' };
     }
-  };
+  }, []);
 
   const value = {
     user,

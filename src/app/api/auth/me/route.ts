@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
     // Obter dados do usuário do cookie de autenticação
     const authCookie = request.cookies.get('amora_auth')?.value;
     
+    
     if (!authCookie) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
     let authData: { userId: string; role: string };
     try {
       authData = JSON.parse(authCookie);
-    } catch {
+    } catch (error) {
       return NextResponse.json({ error: 'Cookie inválido' }, { status: 400 });
     }
 
@@ -28,6 +29,7 @@ export async function GET(request: NextRequest) {
         city: true,
         verified: true,
         role: true,
+        supabaseId: true,
         createdAt: true,
         updatedAt: true,
         properties: {
@@ -69,9 +71,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
     }
 
+
     return NextResponse.json({ user });
   } catch (error) {
-    console.error('Erro ao buscar usuário:', error);
+    console.error('💥 API /me: Erro ao buscar usuário:', error);
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
   }
 }
@@ -81,6 +84,7 @@ export async function PATCH(request: NextRequest) {
     // Obter dados do usuário do cookie de autenticação
     const authCookie = request.cookies.get('amora_auth')?.value;
     
+    
     if (!authCookie) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
@@ -88,7 +92,7 @@ export async function PATCH(request: NextRequest) {
     let authData: { userId: string; role: string };
     try {
       authData = JSON.parse(authCookie);
-    } catch {
+    } catch (error) {
       return NextResponse.json({ error: 'Cookie inválido' }, { status: 400 });
     }
 
@@ -120,12 +124,13 @@ export async function PATCH(request: NextRequest) {
       }
     });
 
+
     return NextResponse.json({ 
       message: 'Usuário atualizado com sucesso',
       user: updatedUser 
     });
   } catch (error) {
-    console.error('Erro ao atualizar usuário:', error);
+    console.error('💥 API /me PATCH: Erro ao atualizar usuário:', error);
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
   }
 }
