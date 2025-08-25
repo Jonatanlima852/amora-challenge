@@ -2,13 +2,36 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { PropertyService } from '../../../services/property';
 
+// Função auxiliar para obter usuário autenticado
+async function getAuthenticatedUser(request: NextRequest) {
+  const authCookie = request.cookies.get('amora_auth')?.value;
+  if (!authCookie) {
+    return null;
+  }
+
+  try {
+    const auth = JSON.parse(authCookie);
+    return auth;
+  } catch {
+    return null;
+  }
+}
+
 // GET /api/properties - Listar propriedades do usuário
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Implementar autenticação real
-    // Por enquanto, vamos buscar todas as propriedades ativas
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Não autorizado' },
+        { status: 401 }
+      );
+    }
+
+    // Buscar propriedades do usuário
     const properties = await prisma.property.findMany({
       where: {
+        createdByUserId: user.userId,
         status: 'ACTIVE',
       },
       orderBy: {
@@ -62,6 +85,14 @@ export async function GET(request: NextRequest) {
 // POST /api/properties - Criar nova propriedade
 export async function POST(request: NextRequest) {
   try {
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Não autorizado' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { sourceUrl } = body;
 
@@ -72,18 +103,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Implementar autenticação real
-    // Por enquanto, vamos criar com um usuário mock
-    const mockUserId = 'mock-user-id';
-    
-    // Verificar se já existe uma propriedade com esta URL
+    // Verificar se já existe uma propriedade com esta URL para este usuário
     const existingProperty = await prisma.property.findFirst({
-      where: { sourceUrl },
+      where: {
+        sourceUrl,
+        createdByUserId: user.userId,
+      },
     });
 
     if (existingProperty) {
       return NextResponse.json(
-        { error: 'Este imóvel já foi adicionado' },
+        { error: 'Este imóvel já foi adicionado por você' },
         { status: 409 }
       );
     }
@@ -92,7 +122,7 @@ export async function POST(request: NextRequest) {
     const property = await prisma.property.create({
       data: {
         sourceUrl,
-        createdByUserId: mockUserId,
+        createdByUserId: user.userId,
         status: 'PENDING',
         title: 'Analisando imóvel...',
         parseAttempts: 0,
