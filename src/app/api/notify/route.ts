@@ -20,8 +20,19 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Formatar número para Evolution API (adicionar @s.whatsapp.net se necessário)
-    const formattedNumber = to.includes('@s.whatsapp.net') ? to : `${to}@s.whatsapp.net`;
+    // Formatar número para Evolution API
+    // Garantir que o número esteja no formato correto: 5562993234763@s.whatsapp.net
+    let formattedNumber = to;
+    
+    // Se não começar com 55 (Brasil), adicionar
+    if (!formattedNumber.startsWith('55')) {
+      formattedNumber = '55' + formattedNumber;
+    }
+    
+    // Adicionar sufixo @s.whatsapp.net se não existir
+    if (!formattedNumber.includes('@s.whatsapp.net')) {
+      formattedNumber = `${formattedNumber}@s.whatsapp.net`;
+    }
 
     // Enviar mensagem com retry
     let success = false;

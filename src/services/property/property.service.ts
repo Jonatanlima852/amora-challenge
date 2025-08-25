@@ -86,6 +86,7 @@ export class PropertyService {
         }
       });
 
+
       await this.sendParsingNotification(
         property.createdBy.phoneE164,
         score.score,
@@ -114,9 +115,17 @@ export class PropertyService {
       const appUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/property/${propertyId}`;
       const message = MessageTemplatesService.parsingCompleted(score, reasons, appUrl);
       
-      const formattedNumber = phoneE164.includes('@s.whatsapp.net') 
-        ? phoneE164 
-        : `${phoneE164}@s.whatsapp.net`;
+      // Garantir que o número esteja no formato correto para Evolution API
+      // O número deve estar no formato: 5562993234763 (com código do país)
+      let formattedNumber = phoneE164;
+      
+      // Se não começar com 55 (Brasil), adicionar
+      if (!formattedNumber.startsWith('55')) {
+        formattedNumber = '55' + formattedNumber;
+      }
+      
+      // Adicionar sufixo @s.whatsapp.net
+      formattedNumber = `${formattedNumber}@s.whatsapp.net`;
 
       await WhatsAppService.sendMessage(formattedNumber, message);
       
