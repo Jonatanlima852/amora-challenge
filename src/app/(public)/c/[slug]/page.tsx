@@ -73,7 +73,8 @@ const mockBroker: Broker = {
   ]
 }
 
-export default function BrokerPage({ params }: { params: { slug: string } }) {
+export default async function BrokerPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const broker = mockBroker // Em produção, buscar por slug
 
   return (

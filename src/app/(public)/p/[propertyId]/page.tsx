@@ -39,7 +39,8 @@ const mockProperty: Property = {
   images: ["/file.svg", "/api/placeholder/600/400", "/api/placeholder/600/400"]
 }
 
-export default function PropertyPage({ params }: { params: { propertyId: string } }) {
+export default async function PropertyPage({ params }: { params: Promise<{ propertyId: string }> }) {
+  const { propertyId } = await params;
   const property = mockProperty // Em produção, buscar por ID
 
   return (
