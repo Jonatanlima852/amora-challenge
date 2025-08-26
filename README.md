@@ -1,6 +1,6 @@
-# aMORA - MVP WhatsApp para Imóveis
+# aMORA - Challenge
 
-Uma plataforma inteligente para análise e gestão de imóveis com integração WhatsApp, desenvolvida em Next.js 15 e TypeScript.
+Uma plataforma inteligente para análise e gestão de imóveis com integração WhatsApp, desenvolvida em Next.js e TypeScript.
 
 ## 🚀 Como Rodar
 
@@ -32,7 +32,17 @@ Acesse: http://localhost:3000
 
 ---
 
-# Problemas identificados e propostas de solução
+
+# Acesso à plataforma deployada
+
+A plataforma foi deployada utilizando-se o vercel, pois o NextJS já fornece AppRouter para uso das rotas e PageRouter para acesso às páginas, de forma que coube perfeitamente para a nossa solução. O link para acesso é: https://amora-whatsapp-mvp.vercel.app/ 
+
+Além da plataforma, se utiliza uma instancia do evolution-api, para integração com whatsapp. Para isso, criei um docker-compose que subia sua imagem além das ferramentas necessárias e rodei em um EC2 na AWS. Para acessar a interface do evolution-api deployado: http://34.212.28.1:8080/manager/
+
+Na plataforma, é só fazer o registro, irá receber email para conrfirmação e então poderá fazer login. Por outro lado, também se pode enviar mensagens para o número +55 11 5297-1796 para testar a automação. Envie um link de um imóvel e ele fará a análise e retornará a pontuação. 
+
+
+# Problemas identificados para o usuário aMORA e propostas de solução
 
 ## 1. Desorganização da busca de imóveis
 
