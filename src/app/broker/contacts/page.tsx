@@ -23,38 +23,56 @@ import {
   TrendingDown,
   Clock,
   UserPlus,
-  Send
+  Send,
+  CheckCircle,
+  XCircle,
+  AlertCircle
 } from 'lucide-react';
 
 interface Contact {
   id: string;
+  userId: string;
   name: string;
   email: string;
-  phone: string;
-  city: string;
-  neighborhood?: string;
-  status: 'active' | 'inactive' | 'prospect' | 'client';
-  lastContact: string;
-  lastActivity: string;
-  propertyCount: number;
-  totalValue: number;
-  preferences: {
-    propertyType: string[];
-    maxPrice: number;
-    minArea: number;
-    neighborhoods: string[];
-  };
-  tags: string[];
-  source: string;
+  phoneE164?: string;
+  city?: string;
+  avatar?: string;
+  notes?: string;
+  invitedAt: string;
+  respondedAt?: string;
+}
+
+interface PendingInvite {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  phoneE164?: string;
+  city?: string;
+  avatar?: string;
+  notes?: string;
+  invitedAt: string;
+}
+
+interface ContactStats {
+  total: number;
+  pending: number;
+  totalInvites: number;
 }
 
 export default function BrokerContacts() {
   const { userRole, loading } = useAuth();
   const router = useRouter();
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
+  const [stats, setStats] = useState<ContactStats>({ total: 0, pending: 0, totalInvites: 0 });
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [sourceFilter, setSourceFilter] = useState('all');
+  const [isLoading, setIsLoading] = useState(true);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteNotes, setInviteNotes] = useState('');
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
 
   // useEffect(() => {
   //   if (!loading && userRole !== 'BROKER' && userRole !== 'ADMIN') {
@@ -62,96 +80,83 @@ export default function BrokerContacts() {
   //   }
   // }, [userRole, loading, router]);
 
-  // Mock data - substituir por dados reais
+  // Carregar contatos da API
   useEffect(() => {
-    const mockContacts: Contact[] = [
-      {
-        id: '1',
-        name: 'João Silva',
-        email: 'joao@email.com',
-        phone: '+55 11 99999-9999',
-        city: 'São Paulo',
-        neighborhood: 'Jardins',
-        status: 'active',
-        lastContact: '2024-01-20T10:30:00Z',
-        lastActivity: '2024-01-20T10:30:00Z',
-        propertyCount: 8,
-        totalValue: 4500000,
-        preferences: {
-          propertyType: ['casa', 'apartamento'],
-          maxPrice: 1500000,
-          minArea: 80,
-          neighborhoods: ['Jardins', 'Vila Madalena', 'Pinheiros']
-        },
-        tags: ['Família', 'Primeira Casa', 'Jardins'],
-        source: 'WhatsApp'
-      },
-      {
-        id: '2',
-        name: 'Maria Costa',
-        email: 'maria@email.com',
-        phone: '+55 11 88888-8888',
-        city: 'São Paulo',
-        neighborhood: 'Vila Madalena',
-        status: 'prospect',
-        lastContact: '2024-01-18T14:20:00Z',
-        lastActivity: '2024-01-19T16:45:00Z',
-        propertyCount: 3,
-        totalValue: 1200000,
-        preferences: {
-          propertyType: ['apartamento'],
-          maxPrice: 800000,
-          minArea: 50,
-          neighborhoods: ['Vila Madalena', 'Pinheiros']
-        },
-        tags: ['Solteira', 'Investimento'],
-        source: 'Site'
-      },
-      {
-        id: '3',
-        name: 'Carlos Santos',
-        email: 'carlos@email.com',
-        phone: '+55 11 77777-7777',
-        city: 'São Paulo',
-        neighborhood: 'Centro',
-        status: 'inactive',
-        lastContact: '2024-01-10T09:15:00Z',
-        lastActivity: '2024-01-12T11:30:00Z',
-        propertyCount: 12,
-        totalValue: 3200000,
-        preferences: {
-          propertyType: ['casa', 'sobrado'],
-          maxPrice: 2000000,
-          minArea: 120,
-          neighborhoods: ['Centro', 'Bela Vista']
-        },
-        tags: ['Família', 'Mudança'],
-        source: 'Indicação'
-      },
-      {
-        id: '4',
-        name: 'Ana Oliveira',
-        email: 'ana@email.com',
-        phone: '+55 11 66666-6666',
-        city: 'São Paulo',
-        neighborhood: 'Pinheiros',
-        status: 'client',
-        lastContact: '2024-01-15T16:00:00Z',
-        lastActivity: '2024-01-20T08:45:00Z',
-        propertyCount: 5,
-        totalValue: 1800000,
-        preferences: {
-          propertyType: ['apartamento', 'studio'],
-          maxPrice: 600000,
-          minArea: 40,
-          neighborhoods: ['Pinheiros', 'Vila Madalena']
-        },
-        tags: ['Jovem', 'Aluguel'],
-        source: 'WhatsApp'
+    if (userRole === 'BROKER' || userRole === 'ADMIN') {
+      fetchContacts();
+    }
+  }, [userRole]);
+
+  const fetchContacts = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/broker/contacts');
+      if (response.ok) {
+        const data = await response.json();
+        setContacts(data.contacts);
+        setPendingInvites(data.pendingInvites);
+        setStats(data.stats);
       }
-    ];
-    setContacts(mockContacts);
-  }, []);
+    } catch (error) {
+      console.error('Erro ao carregar contatos:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const sendInvite = async () => {
+    if (!inviteEmail.trim()) return;
+
+    try {
+      setIsSendingInvite(true);
+      const response = await fetch('/api/broker/contacts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: inviteEmail.trim(),
+          notes: inviteNotes.trim() || null
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Recarregar contatos
+        await fetchContacts();
+        // Limpar formulário
+        setInviteEmail('');
+        setInviteNotes('');
+        setShowInviteDialog(false);
+        // TODO: Mostrar toast de sucesso
+      } else {
+        const error = await response.json();
+        // TODO: Mostrar toast de erro
+        console.error('Erro ao enviar convite:', error);
+      }
+    } catch (error) {
+      console.error('Erro ao enviar convite:', error);
+    } finally {
+      setIsSendingInvite(false);
+    }
+  };
+
+  const removeContact = async (contactId: string) => {
+    if (!confirm('Tem certeza que deseja remover este contato?')) return;
+
+    try {
+      const response = await fetch(`/api/broker/contacts?id=${contactId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        await fetchContacts();
+        // TODO: Mostrar toast de sucesso
+      }
+    } catch (error) {
+      console.error('Erro ao remover contato:', error);
+    }
+  };
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
@@ -162,12 +167,10 @@ export default function BrokerContacts() {
   }
 
   const filteredContacts = contacts.filter(contact => {
-    const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         contact.neighborhood?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || contact.status === statusFilter;
-    const matchesSource = sourceFilter === 'all' || contact.source === sourceFilter;
-    return matchesSearch && matchesStatus && matchesSource;
+    const matchesSearch = contact.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         contact.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         contact.city?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
   });
 
   const formatDate = (dateString: string) => {
@@ -180,57 +183,14 @@ export default function BrokerContacts() {
     });
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(price);
-  };
-
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      active: 'bg-green-100 text-green-800',
-      inactive: 'bg-gray-100 text-gray-800',
-      prospect: 'bg-blue-100 text-blue-800',
-      client: 'bg-purple-100 text-purple-800'
-    };
-    
-    const labels = {
-      active: 'Ativo',
-      inactive: 'Inativo',
-      prospect: 'Prospecto',
-      client: 'Cliente'
-    };
-
-    return (
-      <Badge className={variants[status as keyof typeof variants]}>
-        {labels[status as keyof typeof labels]}
-      </Badge>
-    );
-  };
-
-  const getSourceBadge = (source: string) => {
-    const variants = {
-      WhatsApp: 'bg-green-100 text-green-800',
-      Site: 'bg-blue-100 text-blue-800',
-      Indicação: 'bg-purple-100 text-purple-800'
-    };
-
-    return (
-      <Badge className={variants[source as keyof typeof variants] || 'bg-gray-100 text-gray-800'}>
-        {source}
-      </Badge>
-    );
-  };
-
   const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    return name?.split(' ').map(n => n[0]).join('').toUpperCase() || '?';
   };
 
-  const getDaysSinceLastContact = (dateString: string) => {
-    const lastContact = new Date(dateString);
+  const getDaysSinceInvite = (dateString: string) => {
+    const inviteDate = new Date(dateString);
     const now = new Date();
-    const diffTime = Math.abs(now.getTime() - lastContact.getTime());
+    const diffTime = Math.abs(now.getTime() - inviteDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
@@ -245,7 +205,10 @@ export default function BrokerContacts() {
               <h1 className="text-3xl font-bold text-gray-900">Meus Contatos</h1>
               <p className="text-gray-600 mt-2">Gerencie seus leads e clientes</p>
             </div>
-            <Button className="flex items-center gap-2">
+            <Button 
+              className="flex items-center gap-2"
+              onClick={() => setShowInviteDialog(true)}
+            >
               <UserPlus className="w-4 h-4" />
               Adicionar Contato
             </Button>
@@ -259,7 +222,7 @@ export default function BrokerContacts() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total de Contatos</p>
-                  <p className="text-2xl font-bold text-gray-900">{contacts.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
                 </div>
                 <Users className="w-8 h-8 text-blue-600" />
               </div>
@@ -270,13 +233,11 @@ export default function BrokerContacts() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Leads Ativos</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {contacts.filter(c => c.status === 'active' || c.status === 'prospect').length}
-                  </p>
+                  <p className="text-sm font-medium text-gray-600">Convites Pendentes</p>
+                  <p className="text-2xl font-bold text-orange-600">{stats.pending}</p>
                 </div>
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <TrendingUp className="w-4 h-4 text-green-600" />
+                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                  <AlertCircle className="w-4 h-4 text-orange-600" />
                 </div>
               </div>
             </CardContent>
@@ -286,10 +247,8 @@ export default function BrokerContacts() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Clientes</p>
-                  <p className="text-2xl font-bold text-purple-600">
-                    {contacts.filter(c => c.status === 'client').length}
-                  </p>
+                  <p className="text-sm font-medium text-gray-600">Total de Convites</p>
+                  <p className="text-2xl font-bold text-purple-600">{stats.totalInvites}</p>
                 </div>
                 <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
                   <Star className="w-4 h-4 text-purple-600" />
@@ -302,27 +261,71 @@ export default function BrokerContacts() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Valor Total</p>
-                  <p className="text-2xl font-bold text-orange-600">
-                    {formatPrice(contacts.reduce((acc, c) => acc + c.totalValue, 0)).split(',')[0]}M
+                  <p className="text-sm font-medium text-gray-600">Taxa de Aceitação</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {stats.totalInvites > 0 ? Math.round((stats.total / stats.totalInvites) * 100) : 0}%
                   </p>
                 </div>
-                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                  <Building2 className="w-4 h-4 text-orange-600" />
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-green-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
+        {/* Convites Pendentes */}
+        {pendingInvites.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-orange-600" />
+                Convites Pendentes ({pendingInvites.length})
+              </CardTitle>
+              <CardDescription>
+                Usuários que ainda não responderam ao seu convite
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {pendingInvites.map((invite) => (
+                  <div key={invite.id} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={invite.avatar || ''} />
+                        <AvatarFallback>{getInitials(invite.name)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{invite.name}</p>
+                        <p className="text-sm text-gray-600">{invite.email}</p>
+                        {invite.city && <p className="text-xs text-gray-500">{invite.city}</p>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-orange-600 border-orange-200">
+                        <Clock className="w-3 h-3 mr-1" />
+                        {getDaysSinceInvite(invite.invitedAt)} dias
+                      </Badge>
+                      <Button variant="outline" size="sm">
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        Reenviar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Filters */}
         <Card className="mb-6">
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
-                  placeholder="Buscar por nome, email ou bairro..."
+                  placeholder="Buscar por nome, email ou cidade..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -333,22 +336,9 @@ export default function BrokerContacts() {
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os Status</SelectItem>
-                  <SelectItem value="active">Ativos</SelectItem>
-                  <SelectItem value="prospect">Prospectos</SelectItem>
-                  <SelectItem value="client">Clientes</SelectItem>
-                  <SelectItem value="inactive">Inativos</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Origem" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as Origens</SelectItem>
-                  <SelectItem value="WhatsApp">WhatsApp</SelectItem>
-                  <SelectItem value="Site">Site</SelectItem>
-                  <SelectItem value="Indicação">Indicação</SelectItem>
+                  <SelectItem value="all">Todos os Contatos</SelectItem>
+                  <SelectItem value="recent">Contatos Recentes</SelectItem>
+                  <SelectItem value="old">Contatos Antigos</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -357,122 +347,179 @@ export default function BrokerContacts() {
 
         {/* Contacts List */}
         <div className="space-y-4">
-          {filteredContacts.map((contact) => (
-            <Card key={contact.id} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  {/* Avatar */}
-                  <Avatar className="w-16 h-16">
-                    <AvatarImage src="" />
-                    <AvatarFallback className="text-lg">
-                      {getInitials(contact.name)}
-                    </AvatarFallback>
-                  </Avatar>
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-2 text-gray-600">Carregando contatos...</p>
+            </div>
+          ) : filteredContacts.length > 0 ? (
+            filteredContacts.map((contact) => (
+              <Card key={contact.id} className="hover:shadow-lg transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    {/* Avatar */}
+                    <Avatar className="w-16 h-16">
+                      <AvatarImage src={contact.avatar || ''} />
+                      <AvatarFallback className="text-lg">
+                        {getInitials(contact.name)}
+                      </AvatarFallback>
+                    </Avatar>
 
-                  {/* Contact Info */}
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{contact.name}</h3>
-                        <div className="flex items-center gap-3 mt-1">
-                          {getStatusBadge(contact.status)}
-                          {getSourceBadge(contact.source)}
-                          {getDaysSinceLastContact(contact.lastContact) > 7 && (
-                            <Badge variant="outline" className="text-orange-600 border-orange-200">
-                              <Clock className="w-3 h-3 mr-1" />
-                              {getDaysSinceLastContact(contact.lastContact)} dias
+                    {/* Contact Info */}
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">{contact.name}</h3>
+                          <div className="flex items-center gap-3 mt-1">
+                            <Badge className="bg-green-100 text-green-800">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Contato Aceito
                             </Badge>
+                            {contact.respondedAt && (
+                              <Badge variant="outline" className="text-gray-600">
+                                Respondido em {formatDate(contact.respondedAt)}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right text-sm text-gray-500">
+                          <p>Convite enviado: {formatDate(contact.invitedAt)}</p>
+                          {contact.respondedAt && (
+                            <p>Respondido: {formatDate(contact.respondedAt)}</p>
                           )}
                         </div>
                       </div>
-                      <div className="text-right text-sm text-gray-500">
-                        <p>Último contato: {formatDate(contact.lastContact)}</p>
-                        <p>Última atividade: {formatDate(contact.lastActivity)}</p>
-                      </div>
-                    </div>
 
-                    {/* Contact Details */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Mail className="w-4 h-4" />
-                          <span>{contact.email}</span>
+                      {/* Contact Details */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Mail className="w-4 h-4" />
+                            <span>{contact.email}</span>
+                          </div>
+                          {contact.phoneE164 && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <Phone className="w-4 h-4" />
+                              <span>{contact.phoneE164}</span>
+                            </div>
+                          )}
+                          {contact.city && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <MapPin className="w-4 h-4" />
+                              <span>{contact.city}</span>
+                            </div>
+                          )}
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Phone className="w-4 h-4" />
-                          <span>{contact.phone}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <MapPin className="w-4 h-4" />
-                          <span>{contact.neighborhood}, {contact.city}</span>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Building2 className="w-4 h-4" />
-                          <span>{contact.propertyCount} imóveis salvos</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Star className="w-4 h-4" />
-                          <span>Valor total: {formatPrice(contact.totalValue)}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <span>Preço máximo: {formatPrice(contact.preferences.maxPrice)}</span>
+                        <div className="space-y-2">
+                          {contact.notes && (
+                            <div className="text-sm text-gray-600">
+                              <p className="font-medium">Notas:</p>
+                              <p>{contact.notes}</p>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
 
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {contact.tags.map((tag, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1">
-                        <MessageCircle className="w-4 h-4 mr-2" />
-                        Mensagem
-                      </Button>
-                      <Button variant="outline" size="sm" className="flex-1">
-                        <Phone className="w-4 h-4 mr-2" />
-                        Ligar
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Send className="w-4 h-4" />
-                      </Button>
+                      {/* Actions */}
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="flex-1">
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          Mensagem
+                        </Button>
+                        <Button variant="outline" size="sm" className="flex-1">
+                          <Phone className="w-4 h-4 mr-2" />
+                          Ligar
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => removeContact(contact.id)}
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <Card className="text-center py-12">
+              <CardContent>
+                <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum contato encontrado</h3>
+                <p className="text-gray-600 mb-4">
+                  {searchTerm
+                    ? 'Tente ajustar os filtros de busca'
+                    : 'Comece enviando convites para usuários'
+                  }
+                </p>
+                {!searchTerm && (
+                  <Button onClick={() => setShowInviteDialog(true)}>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Enviar Primeiro Convite
+                  </Button>
+                )}
               </CardContent>
             </Card>
-          ))}
+          )}
         </div>
-
-        {filteredContacts.length === 0 && (
-          <Card className="text-center py-12">
-            <CardContent>
-              <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum contato encontrado</h3>
-              <p className="text-gray-600 mb-4">
-                {searchTerm || statusFilter !== 'all' || sourceFilter !== 'all'
-                  ? 'Tente ajustar os filtros de busca'
-                  : 'Comece adicionando seu primeiro contato'
-                }
-              </p>
-              {!searchTerm && statusFilter === 'all' && sourceFilter === 'all' && (
-                <Button>
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Adicionar Primeiro Contato
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        )}
       </div>
+
+      {/* Dialog de Convite */}
+      {showInviteDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <CardTitle>Enviar Convite</CardTitle>
+              <CardDescription>
+                Convide um usuário para ser seu contato
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email do usuário
+                </label>
+                <Input
+                  type="email"
+                  placeholder="usuario@email.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notas (opcional)
+                </label>
+                <textarea
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Por que você quer conectar com este usuário?"
+                  rows={3}
+                  value={inviteNotes}
+                  onChange={(e) => setInviteNotes(e.target.value)}
+                />
+              </div>
+            </CardContent>
+            <div className="px-6 pb-6 flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowInviteDialog(false)}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={sendInvite}
+                disabled={!inviteEmail.trim() || isSendingInvite}
+                className="flex-1"
+              >
+                {isSendingInvite ? 'Enviando...' : 'Enviar Convite'}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

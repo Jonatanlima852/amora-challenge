@@ -11,7 +11,8 @@ import {
   UsersIcon, 
   UserIcon,
   MessageCircleIcon,
-  XIcon
+  XIcon,
+  UserPlusIcon
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ const navigation = [
   { name: "Imóveis", href: "/app/properties", icon: Building2Icon },
   { name: "Comparar", href: "/app/compare", icon: BarChart3Icon },
   { name: "Grupos", href: "/app/groups", icon: UsersIcon },
+  { name: "Contatos", href: "/app/contacts", icon: UserPlusIcon },
   { name: "Perfil", href: "/app/profile", icon: UserIcon },
 ];
 

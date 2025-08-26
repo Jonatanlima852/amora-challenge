@@ -47,6 +47,10 @@ model User {
   memberships  HouseholdMember[]
   preferences  UserPreferences?
   addedItems   ListItem[] // ← ADICIONAR ESTE CAMPO
+  
+  // Relacionamentos de contatos
+  brokerContacts     BrokerContact[] @relation("BrokerContacts")
+  userContacts       BrokerContact[] @relation("UserContacts")
 
   @@index([phoneE164])
   @@index([email])
@@ -271,4 +275,38 @@ model PhoneVerification {
   
   @@index([phoneE164])
   @@index([code])
+}
+
+// Nova tabela para relacionamentos entre corretores e usuários
+model BrokerContact {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relacionamentos
+  broker      User     @relation("BrokerContacts", fields: [brokerId], references: [id], onDelete: Cascade)
+  brokerId    String
+  user        User     @relation("UserContacts", fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  
+  // Estado do convite
+  status      ContactStatus @default(PENDING)
+  
+  // Metadados do convite
+  invitedAt   DateTime @default(now())
+  respondedAt DateTime?
+  notes       String?  // Notas do corretor sobre o usuário
+  
+  // Índices para consultas frequentes
+  @@unique([brokerId, userId])
+  @@index([brokerId])
+  @@index([userId])
+  @@index([status])
+  @@index([invitedAt])
+}
+
+enum ContactStatus {
+  PENDING    // Convite pendente
+  ACCEPTED   // Convite aceito
+  DECLINED   // Convite recusado
 }
