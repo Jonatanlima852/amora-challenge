@@ -45,17 +45,44 @@ Acesse: http://localhost:3000
 
 Além disso, no portal, haverá um **botão para comparar imóveis** selecionados dentre os adicionados, utilizando IA. Assim, resolvendo o problema do salvamento e comparação entre imóveis. 
 
+É importante observar que o usuario poderá adicionar preferencias se logado, que podem servir para a IA trazer uma melhor análise dos imóveis fronecidos.
+
+Pensou-se também em um sistema de pontuação aMORA para facilitar a comparação. 
+
+Tanto o envio de uma mensagem com um link por whatsapp resultará em uma análise feita pelo bot, como uma adição na propria interface também resultará em uma mensagem por whatsapp. 
+
+![Imoveis](./public/screenshoots/zap/zap-0.png)
+![Imoveis](./public/screenshoots/zap/zap.png)
+
+
+![Imoveis](./public/screenshoots/app/app-perfil-1.png)
+
+![Imoveis](./public/screenshoots/app/app-imoveis-1.png)
+![Imoveis](./public/screenshoots/app/app-imoveis-2.png)
+
+![Imoveis](./public/screenshoots/app/app-compare-1.png)
+![Imoveis](./public/screenshoots/app/app-compare-2.png)
+![Imoveis](./public/screenshoots/app/app-compare-3.png)
+
 ---
 
 ## 2. Falta de engajamento contínuo 
 
 **Como é atualmente:** Leads somem. Apenas voltam se acham algo sozinhos. 
 
-**Como será na solução:** Uma vez por semana rodará um cron job para **buscar imóveis similares** aos adicionados e respeitando as características informadas na plataforma(personalização das necessidades do usuário). 
+**Como será na solução:** O corretor tem uma aba em que pode enviar "pedido de amizade" para o Lead, apenas em posse do seu email. Na mesma interface, há a possibilidade de escolher template e um imovel adicionado por ele mesmo e enviar para o Lead, o que resultaria na ativação. 
 
-Os imóveis encontrados são enviados com o devido detalhamento e link por whatsapp, para o usuário escolher quais adicionar ou não. **Isso resultará na ativação do Lead**. 
 
-**Ideia extra:** Interface do gestor pode ter as datas dos últimos acessos e possibilidade de ativar por email ou whatsapp. 
+**Ideia extra:** Uma vez por semana rodará um cron job para **buscar imóveis similares** aos adicionados e respeitando as características informadas na plataforma(personalização das necessidades do usuário). 
+
+Os imóveis encontrados são enviados com o devido detalhamento e link por whatsapp, para o usuário escolher quais adicionar ou não. **Isso resultará na ativação do Lead**. Infelizmente essa ideia não foi implementada por falta de tempo. 
+
+
+![Imoveis](./public/screenshoots/app/app-contatos-1.png)
+![Imoveis](./public/screenshoots/broker/broker-contatos-1.png)
+![Imoveis](./public/screenshoots/broker/broker-contatos-2.png)
+![Imoveis](./public/screenshoots/broker/broker-contatos-3.png)
+
 
 ---
 
@@ -65,11 +92,16 @@ Os imóveis encontrados são enviados com o devido detalhamento e link por whats
 
 **Como será na solução:** **Haverá grupos**, que podem conter somentes usuários, mas também usuários e corretores. E sempre que o usuário se inserir em um grupo, **todos imóveis adicionados** por ele serão imediamente considerados do grupo. 
 
-A criação do grupo será através de um **link de compatilhamento**. 
+A criação do grupo será através de do email de cada pessoa a colaborar. Neste MVP, a pessoa deve possuir login na pltafaorma e assim receberá o convite. 
 
-**Ideia extra:** Cada imóvel compartilhado poderá ter **reações e comentários** de cada participante do grupo. Deve vir com a informação de quem adicionou. 
+**Ideia extra:** Cada imóvel compartilhado poderá ter **reações e comentários** de cada participante do grupo. Deve vir com a informação de quem adicionou. Outra ideia é a criação do grupo ser simplificada através de um link de compartilhamento mas por falta de tempo não foi possível implementar.
 
-**OBS:** O corretor deverá **informar a qual grupo** está adicionando o imóvel, pois ele poderá ter vários grupos. O imóvel deve vir com algum identificador. 
+![Imoveis](./public/screenshoots/app/app-groups-1.png)
+![Imoveis](./public/screenshoots/app/app-groups-2.png)
+![Imoveis](./public/screenshoots/app/app-groups-3.png)
+
+
+
 
 ---
 
@@ -79,7 +111,19 @@ A criação do grupo será através de um **link de compatilhamento**.
 
 **Como será na solução:** Página **personalizada** para cada correror (ex: amora.app/corretor-joao), com as devidas call-to-actions, bom design, apresentando **vantagens da aMORA**. 
 
-Além disso, o corretor poderá **cadastrar imóveis** que serão apresentados na sua página em **destaque**. 
+Além disso, o corretor poderá **cadastrar imóveis** que serão apresentados na sua página em **destaque**. Há a ferramenta de exportar como png e compartilhar diretamente nas midias sociais ou no whatsapp, o que facilita para o corretor encaminhar para várias pessoas e assim tanto divulgar seu trabalho como divulgar a aMORA. Informações na página do corretor são altamente personalizadas.
+
+O design desta página de apresentação deixou a desejar, por falta de tempo. Mas o básico está funcionando, o cadastro dos imoveis(por link ou infromações brutas) e de informações personalizadas. 
+
+![Imoveis](./public/screenshoots/broker/broker-public-page-1.png)
+![Imoveis](./public/screenshoots/broker/broker-public-page-1.png)
+![Imoveis](./public/screenshoots/broker/broker-public-page-2.png)
+![Imoveis](./public/screenshoots/broker/broker-public-page-3.png)
+![Imoveis](./public/screenshoots/broker/broker-public-page-4.png)
+![Imoveis](./public/screenshoots/broker/broker-public-page-5.png)
+
+
+
 
 
 ## 5. Captação e ativação de leads sem custo de mídia
@@ -91,42 +135,22 @@ Além disso, o corretor poderá **cadastrar imóveis** que serão apresentados n
 
 1. Será um **site**, para não ser necessário instalar nada. O **link ficará na descrição de bot**, que envia o link do site quando um imóvel for adicionado. 
 
-2. Foco na integração com whatsapp: por ele poderemos **adicionar imóveis** e o bot poderá **buscar imóveis cadastrados** também. O bot **enviará resumos** quando requisitado pelo usuário e também será responsável pela ativação de Lead. 
+2. Foco na integração com whatsapp: por ele poderemos **adicionar imóveis** e o bot poderá **buscar imóveis cadastrados** também. (Extra não implementado por falta de tempo: O bot **enviará resumos** quando requisitado pelo usuário e também será responsável pela ativação de Lead.)
 
 3. Além de site personalizado, o corretor poderá exportar um **png com call to action da aMORA e imóveis destaque**, para compartilhar nas redes sociais. 
 
 4. Uso do bot para adicionar imóveis e buscá-los **sem login obrigatório**. Porém, só é possível acessar as ferramentas mais completas do site após login e associação com o número (confirmação via whatsapp). 
 
-5. Ferramenta disponível sem login: **comparação de até 5 urls de imóveis**. (problema: não sei como setar um limite para o usuário não explorar essa feature)
+5. Ferramenta disponível sem login: **comparação de até 5 urls de imóveis**. (problema enfrentado: não sei como setar um limite para o usuário não explorar essa feature)
 
+6. Quando a pessoa decidir utilizar whatsapp em conjunto ao registro no site para ter acesso a mais funcionalidades, a lógica de vinculo desses registros é bem simples, por meio de um simples envio de código para o celular da pessoa que deve ser digitado na interface. 
 
+![Imoveis](./public/screenshoots/app/app-public.png)
+![Imoveis](./public/screenshoots/app/app-login.png)
+![Imoveis](./public/screenshoots/zap/zap-0.png)
+![Imoveis](./public/screenshoots/app/app-perfil-2.png)
+![Imoveis](./public/screenshoots/broker/broker-public-page-5.png)
 ---
-
-## 🏗️ Arquitetura e Organização do Código
-
-### **Estrutura de Pastas**
-```
-src/
-├── app/                    # Next.js App Router
-│   ├── api/               # Endpoints da API
-│   │   ├── properties/    # CRUD de imóveis
-│   │   ├── groups/        # Gestão de grupos
-│   │   ├── auth/          # Autenticação
-│   │   └── webhooks/      # Webhooks WhatsApp
-│   ├── app/               # Área autenticada
-│   │   ├── properties/    # Páginas de imóveis
-│   │   ├── groups/        # Gestão de grupos
-│   │   └── profile/       # Perfil do usuário
-│   └── (public)/          # Páginas públicas
-├── components/             # Componentes React reutilizáveis
-├── services/               # Lógica de negócio
-│   ├── property/          # Serviços de imóveis
-│   ├── parsing/           # Parser com IA
-│   └── sync-whatsapp/     # Integração WhatsApp
-├── types/                  # Definições TypeScript
-├── lib/                    # Utilitários e configurações
-└── contexts/               # Contextos React (Auth, etc.)
-```
 
 ### **Tecnologias Principais**
 - **Frontend**: Usei Next.js 15, TypeScript, Tailwind CSS
@@ -157,9 +181,6 @@ src/
 
 ### **Segurança e Performance**
 - **Middleware de autenticação**: Proteção de rotas autenticadas
-- **Validação de dados**: Zod para validação de schemas
-- **Rate limiting**: Proteção contra abuso da API
-- **Cache inteligente**: Redis para dados frequentemente acessados
-- **Lazy loading**: Carregamento sob demanda de componentes pesados
+
 
 Esta plataforma representa um MVP robusto e escalável para gestão de imóveis com integração WhatsApp, demonstrando boas práticas de desenvolvimento e arquitetura moderna.
