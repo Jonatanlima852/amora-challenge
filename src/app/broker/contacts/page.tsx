@@ -473,23 +473,23 @@ export default function BrokerContacts() {
             </div>
           ) : filteredContacts.length > 0 ? (
             filteredContacts.map((contact) => (
-              <Card key={contact.id} className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    {/* Avatar */}
-                    <Avatar className="w-16 h-16">
+            <Card key={contact.id} className="hover:shadow-lg transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  {/* Avatar */}
+                  <Avatar className="w-16 h-16">
                       <AvatarImage src={contact.avatar || ''} />
-                      <AvatarFallback className="text-lg">
-                        {getInitials(contact.name)}
-                      </AvatarFallback>
-                    </Avatar>
+                    <AvatarFallback className="text-lg">
+                      {getInitials(contact.name)}
+                    </AvatarFallback>
+                  </Avatar>
 
-                    {/* Contact Info */}
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">{contact.name}</h3>
-                          <div className="flex items-center gap-3 mt-1">
+                  {/* Contact Info */}
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">{contact.name}</h3>
+                        <div className="flex items-center gap-3 mt-1">
                             <Badge className="bg-green-100 text-green-800">
                               <CheckCircle className="w-3 h-3 mr-1" />
                               Contato Aceito
@@ -497,50 +497,50 @@ export default function BrokerContacts() {
                             {contact.respondedAt && (
                               <Badge variant="outline" className="text-gray-600">
                                 Respondido em {formatDate(contact.respondedAt)}
-                              </Badge>
-                            )}
-                          </div>
+                            </Badge>
+                          )}
                         </div>
-                        <div className="text-right text-sm text-gray-500">
+                      </div>
+                      <div className="text-right text-sm text-gray-500">
                           <p>Convite enviado: {formatDate(contact.invitedAt)}</p>
                           {contact.respondedAt && (
                             <p>Respondido: {formatDate(contact.respondedAt)}</p>
                           )}
-                        </div>
                       </div>
+                    </div>
 
-                      {/* Contact Details */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Mail className="w-4 h-4" />
-                            <span>{contact.email}</span>
-                          </div>
+                    {/* Contact Details */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <Mail className="w-4 h-4" />
+                          <span>{contact.email}</span>
+                        </div>
                           {contact.phoneE164 && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <Phone className="w-4 h-4" />
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <Phone className="w-4 h-4" />
                               <span>{contact.phoneE164}</span>
-                            </div>
+                        </div>
                           )}
                           {contact.city && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <MapPin className="w-4 h-4" />
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <MapPin className="w-4 h-4" />
                               <span>{contact.city}</span>
-                            </div>
-                          )}
                         </div>
-                        <div className="space-y-2">
+                          )}
+                      </div>
+                      <div className="space-y-2">
                           {contact.notes && (
                             <div className="text-sm text-gray-600">
                               <p className="font-medium">Notas:</p>
                               <p>{contact.notes}</p>
-                            </div>
-                          )}
                         </div>
+                          )}
                       </div>
+                    </div>
 
-                      {/* Actions */}
-                      <div className="flex gap-2">
+                    {/* Actions */}
+                    <div className="flex gap-2">
                         <Button 
                           variant="outline" 
                           size="sm" 
@@ -549,7 +549,7 @@ export default function BrokerContacts() {
                         >
                           <Zap className="w-4 h-4 mr-2" />
                           Reativar Cliente
-                        </Button>
+                      </Button>
                         {contact.phoneE164 && (
                           <Button 
                             variant="outline" 
@@ -559,7 +559,7 @@ export default function BrokerContacts() {
                           >
                             <Smartphone className="w-4 h-4 mr-2" />
                             WhatsApp
-                          </Button>
+                      </Button>
                         )}
                         <Button 
                           variant="outline" 
@@ -567,34 +567,34 @@ export default function BrokerContacts() {
                           onClick={() => removeContact(contact.id)}
                         >
                           <XCircle className="w-4 h-4" />
-                        </Button>
-                      </div>
+                      </Button>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <Card className="text-center py-12">
-              <CardContent>
-                <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum contato encontrado</h3>
-                <p className="text-gray-600 mb-4">
-                  {searchTerm
-                    ? 'Tente ajustar os filtros de busca'
-                    : 'Comece enviando convites para usuários'
-                  }
-                </p>
-                {!searchTerm && (
-                  <Button onClick={() => setShowInviteDialog(true)}>
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Enviar Primeiro Convite
-                  </Button>
-                )}
+                </div>
               </CardContent>
             </Card>
-          )}
-        </div>
+            ))
+          ) : (
+          <Card className="text-center py-12">
+            <CardContent>
+              <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum contato encontrado</h3>
+              <p className="text-gray-600 mb-4">
+                  {searchTerm
+                  ? 'Tente ajustar os filtros de busca'
+                    : 'Comece enviando convites para usuários'
+                }
+              </p>
+                {!searchTerm && (
+                  <Button onClick={() => setShowInviteDialog(true)}>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                    Enviar Primeiro Convite
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
       </div>
 
       {/* Dialog de Convite */}

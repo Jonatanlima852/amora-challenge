@@ -14,16 +14,21 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, userRole, session } = useAuth();
+  const { signIn, session } = useAuth();
   const router = useRouter();
 
   useEffect(() => {  
-    if (session && userRole) {
-      // Redirecionar sempre para /app após login bem-sucedido
-      const dest = userRole === 'BROKER' || userRole === 'ADMIN' ? '/broker' : '/app';
-      router.push(dest);
+    if (session?.user) {
+      // Extrair o role do user_metadata da session
+      const userRole = session.user.user_metadata?.role;
+      
+      if (userRole) {
+        // Redirecionar baseado no role
+        const destination = userRole === 'BROKER' || userRole === 'ADMIN' ? '/broker' : '/app';
+        router.push(destination);
+      }
     }
-  }, [session, userRole, router]);
+  }, [session, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +38,7 @@ export default function LoginPage() {
       const { error } = await signIn(email, password);
       
       if (error) {
-        toast.error('Erro no login: ' + error.message);
+        toast.error('Erro no login: ' + error);
       } else {
         toast.success('Login realizado! Verificando configurações...');
       }

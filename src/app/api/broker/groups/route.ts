@@ -16,16 +16,6 @@ async function getAuthenticatedUser(request: NextRequest) {
   }
 }
 
-// Função auxiliar para verificar se o usuário é corretor
-async function verifyBroker(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: true }
-  });
-  
-  return user?.role === 'BROKER' || user?.role === 'ADMIN';
-}
-
 // GET /api/broker/groups - Listar grupos do corretor
 export async function GET(request: NextRequest) {
   try {
@@ -37,19 +27,18 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Verificar se o usuário é corretor
-    const isBroker = await verifyBroker(user.userId);
-    if (!isBroker) {
+    // Verificar se é corretor
+    if (user.userRole !== 'BROKER' && user.userRole !== 'ADMIN') {
       return NextResponse.json(
-        { error: 'Acesso negado. Apenas corretores podem acessar esta rota.' },
+        { error: 'Acesso negado - apenas corretores' },
         { status: 403 }
       );
     }
 
-    // Buscar grupos onde o corretor é o broker
-    const groups = await prisma.list.findMany({
+    // Buscar grupos onde o corretor é membro
+    const memberships = await prisma.householdMember.findMany({
       where: {
-        brokerId: user.userId,
+        userId: user.userId,
       },
       include: {
         household: {
@@ -61,95 +50,72 @@ export async function GET(request: NextRequest) {
                     id: true,
                     name: true,
                     email: true,
+                    role: true,
                     phoneE164: true,
-                    city: true,
+                    avatar: true,
+                  },
+                },
+              },
+            },
+            lists: {
+              include: {
+                items: {
+                  include: {
+                    property: {
+                      select: {
+                        id: true,
+                        title: true,
+                        price: true,
+                        m2: true,
+                        score: true,
+                        photos: true,
+                      },
+                    },
                   },
                 },
               },
             },
           },
         },
-        items: {
-          include: {
-            property: {
-              select: {
-                id: true,
-                title: true,
-                price: true,
-                m2: true,
-                score: true,
-                photos: true,
-                status: true,
-              },
-            },
-            addedBy: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
       },
     });
 
-    // Calcular estatísticas
-    const totalGroups = groups.length;
-    const activeGroups = groups.filter(g => g.household && g.household.members.length > 0).length;
-    const totalProperties = groups.reduce((sum, group) => sum + group.items.length, 0);
-    const totalMembers = groups.reduce((sum, group) => 
-      sum + (group.household ? group.household.members.length : 0), 0
-    );
-
-    return NextResponse.json({
-      success: true,
-      groups: groups.map(group => ({
-        id: group.id,
-        name: group.name,
-        household: group.household ? {
-          id: group.household.id,
-          name: group.household.name,
-          members: group.household.members.map(member => ({
-            id: member.id,
-            userId: member.user.id,
-            name: member.user.name,
-            email: member.user.email,
-            phoneE164: member.user.phoneE164,
-            city: member.user.city,
-            role: member.role,
-            status: member.status,
-            invitedAt: member.invitedAt,
-            respondedAt: member.respondedAt,
-          })),
-        } : null,
-        properties: group.items.map(item => ({
+    const groups = memberships.map(membership => ({
+      id: membership.household.id,
+      name: membership.household.name,
+      role: membership.role,
+      status: membership.status,
+      invitedAt: membership.invitedAt,
+      members: membership.household.members.map(member => ({
+        id: member.id,
+        userId: member.user.id,
+        name: member.user.name,
+        email: member.user.email,
+        role: member.user.role,
+        membershipRole: member.role,
+        status: member.status,
+        invitedAt: member.invitedAt,
+        phoneE164: member.user.phoneE164,
+        avatar: member.user.avatar,
+      })),
+      properties: membership.household.lists.flatMap(list => 
+        list.items.map(item => ({
           id: item.property.id,
           title: item.property.title,
           price: item.property.price,
           m2: item.property.m2,
           score: item.property.score,
           photos: item.property.photos,
-          status: item.property.status,
           notes: item.notes,
           favorite: item.favorite,
-          addedBy: item.addedBy ? {
-            id: item.addedBy.id,
-            name: item.addedBy.name,
-          } : null,
-        })),
-        isDefault: group.isDefault,
-        createdAt: group.createdAt,
-      })),
-      stats: {
-        total: totalGroups,
-        active: activeGroups,
-        inactive: totalGroups - activeGroups,
-        totalProperties,
-        totalMembers,
-      },
+        }))
+      ),
+      createdAt: membership.household.createdAt,
+    }));
+
+    return NextResponse.json({
+      success: true,
+      groups,
     });
 
   } catch (error) {
@@ -172,17 +138,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar se o usuário é corretor
-    const isBroker = await verifyBroker(user.userId);
-    if (!isBroker) {
+    // Verificar se é corretor
+    if (user.userRole !== 'BROKER' && user.userRole !== 'ADMIN') {
       return NextResponse.json(
-        { error: 'Acesso negado. Apenas corretores podem acessar esta rota.' },
+        { error: 'Acesso negado - apenas corretores' },
         { status: 403 }
       );
     }
 
     const body = await request.json();
-    const { name, description, isDefault } = body;
+    const { name } = body;
 
     if (!name) {
       return NextResponse.json(
@@ -191,48 +156,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Criar novo grupo
-    const newGroup = await prisma.list.create({
+    // Criar grupo e adicionar corretor como owner com status ACCEPTED
+    const household = await prisma.household.create({
       data: {
         name,
-        brokerId: user.userId,
-        isDefault: isDefault || false,
-      },
-      include: {
-        household: {
-          include: {
-            members: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                    phoneE164: true,
-                    city: true,
-                  },
-                },
-              },
-            },
+        members: {
+          create: {
+            userId: user.userId,
+            role: 'OWNER',
+            status: 'ACCEPTED', // Status ativo para o criador
+            invitedAt: new Date(), // Marcar como convidado agora
+            respondedAt: new Date(), // Marcar como respondido agora
           },
         },
-        items: {
+      },
+      include: {
+        members: {
           include: {
-            property: {
-              select: {
-                id: true,
-                title: true,
-                price: true,
-                m2: true,
-                score: true,
-                photos: true,
-                status: true,
-              },
-            },
-            addedBy: {
+            user: {
               select: {
                 id: true,
                 name: true,
+                email: true,
+                role: true,
+                phoneE164: true,
+                avatar: true,
               },
             },
           },
@@ -243,12 +191,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       group: {
-        id: newGroup.id,
-        name: newGroup.name,
-        household: newGroup.household,
-        properties: newGroup.items,
-        isDefault: newGroup.isDefault,
-        createdAt: newGroup.createdAt,
+        id: household.id,
+        name: household.name,
+        role: 'OWNER',
+        status: 'ACCEPTED',
+        invitedAt: new Date(),
+        members: household.members.map(member => ({
+          id: member.id,
+          userId: member.user.id,
+          name: member.user.name,
+          email: member.user.email,
+          role: member.user.role,
+          membershipRole: member.role,
+          status: member.status,
+          invitedAt: member.invitedAt,
+          phoneE164: member.user.phoneE164,
+          avatar: member.user.avatar,
+        })),
+        properties: [],
+        createdAt: household.createdAt,
       },
     });
 
