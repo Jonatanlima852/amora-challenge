@@ -155,7 +155,9 @@ O design desta página de apresentação deixou a desejar, por falta de tempo. M
 
 6. Quando a pessoa decidir utilizar whatsapp em conjunto ao registro no site para ter acesso a mais funcionalidades, a lógica de vinculo desses registros é bem simples, por meio de um simples envio de código para o celular da pessoa que deve ser digitado na interface. 
 
-![Imoveis](./public/screenshoots/app/app-public.png)
+![Imoveis](./public/screenshoots/app/app-public-2.png)
+![Imoveis](./public/screenshoots/app/app-public-3.png)
+![Imoveis](./public/screenshoots/app/app-public-4.png)
 ![Imoveis](./public/screenshoots/app/app-login.png)
 ![Imoveis](./public/screenshoots/zap/zap-0.png)
 ![Imoveis](./public/screenshoots/app/app-perfil-2.png)
