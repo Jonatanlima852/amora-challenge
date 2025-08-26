@@ -15,8 +15,6 @@ import {
   Globe, 
   Edit, 
   Eye, 
-  Download, 
-  Share2, 
   Building2, 
   MapPin, 
   DollarSign, 
@@ -25,8 +23,12 @@ import {
   Link as LinkIcon,
   Copy,
   CheckCircle,
-  Plus
+  Plus,
+  Save,
+  Share2,
+  AlertTriangle
 } from 'lucide-react';
+import { ShareExportButtons } from '../_components/ShareExportButtons';
 
 interface BrokerProfile {
   id: string;
@@ -58,67 +60,141 @@ interface PropertyHighlight {
 }
 
 export default function BrokerPage() {
-  const { userRole, loading } = useAuth();
+  const { userRole, loading, user } = useAuth();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [profile, setProfile] = useState<BrokerProfile>({
-    id: '1',
-    name: 'João Silva',
-    email: 'joao@amora.com',
-    phone: '+55 11 99999-9999',
-    bio: 'Corretor especializado em imóveis residenciais na região de São Paulo. Mais de 10 anos de experiência no mercado imobiliário, ajudando famílias a encontrar o lar dos sonhos.',
-    slug: 'joao-silva',
-    company: 'aMORA Imóveis',
-    specialties: ['Residencial', 'Jardins', 'Vila Madalena', 'Primeira Casa'],
-    highlights: [
-      {
-        id: '1',
-        title: 'Apartamento 2 quartos - Centro',
-        price: 450000,
-        area: 65,
-        neighborhood: 'Centro',
-        city: 'São Paulo',
-        imageUrl: '/placeholder.jpg',
-        score: 85
-      },
-      {
-        id: '2',
-        title: 'Casa 3 quartos - Jardins',
-        price: 1200000,
-        area: 120,
-        neighborhood: 'Jardins',
-        city: 'São Paulo',
-        imageUrl: '/placeholder.jpg',
-        score: 92
-      },
-      {
-        id: '3',
-        title: 'Studio - Vila Madalena',
-        price: 280000,
-        area: 35,
-        neighborhood: 'Vila Madalena',
-        city: 'São Paulo',
-        imageUrl: '/placeholder.jpg',
-        score: 78
-      }
-    ],
+    id: user?.id || '',
+    name: user?.user_metadata?.name || 'Seu Nome',
+    email: user?.email || 'seu@email.com',
+    phone: user?.phone || '+55 11 99999-9999',
+    bio: 'Corretor especializado em imóveis residenciais. Conte um pouco sobre você e sua experiência...',
+    slug: 'seu-slug',
+    company: 'Sua Empresa',
+    specialties: ['Residencial', 'Primeira Casa'],
+    highlights: [],
     socialLinks: {
-      whatsapp: '+5511999999999',
-      instagram: '@joaosilva',
-      linkedin: 'joao-silva'
+      whatsapp: '',
+      instagram: '',
+      linkedin: ''
     }
   });
 
+  // Carregar perfil do banco de dados
   useEffect(() => {
-    if (!loading && userRole !== 'BROKER' && userRole !== 'ADMIN') {
-      router.push('/properties');
+    const loadProfile = async () => {
+      try {
+        const response = await fetch('/api/broker/profile');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.profile) {
+            setProfile(prev => ({
+              ...prev,
+              ...data.profile,
+              // Garantir que campos nunca sejam null
+              name: data.profile.name || prev.name,
+              bio: data.profile.bio || prev.bio,
+              slug: data.profile.slug || prev.slug,
+              company: data.profile.company || prev.company,
+              phone: data.profile.phone || prev.phone,
+              specialties: data.profile.specialties || prev.specialties,
+              socialLinks: {
+                whatsapp: data.profile.socialLinks?.whatsapp || prev.socialLinks.whatsapp,
+                instagram: data.profile.socialLinks?.instagram || prev.socialLinks.instagram,
+                linkedin: data.profile.socialLinks?.linkedin || prev.socialLinks.linkedin
+              }
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar perfil:', error);
+      }
+    };
+
+    if (user?.email) {
+      loadProfile();
     }
-  }, [userRole, loading, router]);
+  }, [user?.email]);
+
+  // useEffect(() => {
+  //   if (!loading && userRole !== 'BROKER' && userRole !== 'ADMIN') {
+  //     router.push('/app');
+  //   }
+  // }, [userRole, loading, router]);
 
   const handleSave = async () => {
-    // Simular salvamento - substituir por chamada real da API
-    setIsEditing(false);
+    try {
+      setSaving(true);
+      
+      // Validações básicas
+      if (!profile.name.trim()) {
+        throw new Error('Nome é obrigatório');
+      }
+      
+      if (!profile.slug.trim()) {
+        throw new Error('URL personalizada é obrigatória');
+      }
+      
+      // Validar formato do slug (apenas letras, números e hífens)
+      if (!/^[a-z0-9-]+$/.test(profile.slug)) {
+        throw new Error('URL personalizada deve conter apenas letras minúsculas, números e hífens');
+      }
+      
+      const response = await fetch('/api/broker/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: (profile.name ?? '').trim(),
+          bio: (profile.bio ?? '').trim(),
+          slug: (profile.slug ?? '').trim().toLowerCase(),
+          company: profile.company?.trim() || null,
+          specialties: (profile.specialties ?? []).filter(s => s.trim()),
+          socialLinks: {
+            whatsapp: profile.socialLinks.whatsapp?.trim() || null,
+            instagram: profile.socialLinks.instagram?.trim() || null,
+            linkedin: profile.socialLinks.linkedin?.trim() || null
+          }
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setIsEditing(false);
+          // Atualizar o perfil com os dados retornados
+          setProfile(prev => ({
+            ...prev,
+            ...data.profile,
+            phone: data.profile.phone || prev.phone,
+            specialties: data.profile.specialties || prev.specialties,
+            socialLinks: data.profile.socialLinks || prev.socialLinks
+          }));
+          // Mostrar mensagem de sucesso
+          setMessage({ type: 'success', text: 'Perfil salvo com sucesso!' });
+          setTimeout(() => setMessage(null), 5000);
+        } else {
+          throw new Error(data.error || 'Erro ao salvar perfil');
+        }
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao salvar perfil');
+      }
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+      // Mostrar mensagem de erro
+      setMessage({ 
+        type: 'error', 
+        text: `Erro ao salvar: ${error instanceof Error ? error.message : 'Erro desconhecido'}` 
+      });
+      setTimeout(() => setMessage(null), 5000);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const copyPublicUrl = () => {
@@ -137,6 +213,26 @@ export default function BrokerPage() {
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
+
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/[^a-z0-9\s-]/g, '') // Remove caracteres especiais
+      .replace(/\s+/g, '-') // Substitui espaços por hífens
+      .replace(/-+/g, '-') // Remove hífens duplicados
+      .trim();
+  };
+
+  const handleNameChange = (name: string) => {
+    setProfile(prev => ({ 
+      ...prev, 
+      name,
+      // Gerar slug automaticamente se estiver vazio ou for o padrão
+      slug: prev.slug === 'seu-slug' ? generateSlug(name) : prev.slug
+    }));
   };
 
   if (loading) {
@@ -174,6 +270,24 @@ export default function BrokerPage() {
             </div>
           </div>
         </div>
+
+        {/* Mensagens de feedback */}
+        {message && (
+          <div className={`mb-6 p-4 rounded-lg border ${
+            message.type === 'success' 
+              ? 'bg-green-50 border-green-200 text-green-800' 
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}>
+            <div className="flex items-center gap-2">
+              {message.type === 'success' ? (
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              ) : (
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              )}
+              <span className="font-medium">{message.text}</span>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Profile Section */}
@@ -213,7 +327,7 @@ export default function BrokerPage() {
                       <Input
                         id="name"
                         value={profile.name}
-                        onChange={(e) => setProfile(prev => ({ ...prev, name: e.target.value }))}
+                        onChange={(e) => handleNameChange(e.target.value)}
                         className="mt-1"
                       />
                     ) : (
@@ -226,13 +340,13 @@ export default function BrokerPage() {
                     {isEditing ? (
                       <Input
                         id="company"
-                        value={profile.company || ''}
+                        value={profile.company ?? ''}
                         onChange={(e) => setProfile(prev => ({ ...prev, company: e.target.value }))}
                         className="mt-1"
                         placeholder="Nome da empresa"
                       />
                     ) : (
-                      <p className="text-gray-600 mt-1">{profile.company || 'Não informado'}</p>
+                      <p className="text-gray-600 mt-1">{profile.company ?? 'Não informado'}</p>
                     )}
                   </div>
 
@@ -241,14 +355,14 @@ export default function BrokerPage() {
                     {isEditing ? (
                       <Textarea
                         id="bio"
-                        value={profile.bio}
+                        value={profile.bio ?? ''}
                         onChange={(e) => setProfile(prev => ({ ...prev, bio: e.target.value }))}
                         className="mt-1"
                         rows={4}
                         placeholder="Conte um pouco sobre você e sua experiência..."
                       />
                     ) : (
-                      <p className="text-gray-600 mt-1">{profile.bio}</p>
+                      <p className="text-gray-600 mt-1">{profile.bio ?? 'Biografia não informada'}</p>
                     )}
                   </div>
 
@@ -257,29 +371,102 @@ export default function BrokerPage() {
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-sm text-gray-500">amora.app/c/</span>
                       {isEditing ? (
-                        <Input
-                          id="slug"
-                          value={profile.slug}
-                          onChange={(e) => setProfile(prev => ({ ...prev, slug: e.target.value }))}
-                          className="flex-1"
-                        />
+                        <div className="flex items-center gap-2 flex-1">
+                          <Input
+                            id="slug"
+                            value={profile.slug}
+                            onChange={(e) => setProfile(prev => ({ ...prev, slug: e.target.value }))}
+                            className="flex-1"
+                            placeholder="sua-url-personalizada"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setProfile(prev => ({ ...prev, slug: generateSlug(profile.name) }))}
+                            className="whitespace-nowrap"
+                          >
+                            Gerar
+                          </Button>
+                        </div>
                       ) : (
                         <span className="font-medium">{profile.slug}</span>
                       )}
                     </div>
+                    {isEditing && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Use apenas letras minúsculas, números e hífens. Ex: joao-silva
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 {/* Specialties */}
                 <div>
                   <Label>Especialidades</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {profile.specialties.map((specialty, index) => (
-                      <Badge key={index} variant="secondary">
-                        {specialty}
-                      </Badge>
-                    ))}
-                  </div>
+                  {isEditing ? (
+                    <div className="space-y-2 mt-2">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="specialtyInput"
+                          placeholder="Adicionar especialidade"
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                                                             setProfile(prev => ({
+                                 ...prev,
+                                 specialties: [...(prev.specialties ?? []), e.currentTarget.value.trim()]
+                               }));
+                              (e.target as HTMLInputElement).value = '';
+                            }
+                          }}
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const input = document.getElementById('specialtyInput') as HTMLInputElement;
+                            if (input && input.value.trim()) {
+                                                           setProfile(prev => ({
+                               ...prev,
+                               specialties: [...(prev.specialties ?? []), input.value.trim()]
+                             }));
+                              input.value = '';
+                            }
+                          }}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                                             <div className="flex flex-wrap gap-2">
+                         {(profile.specialties ?? []).map((specialty, index) => (
+                           <Badge key={index} variant="secondary" className="group">
+                             {specialty}
+                             <button
+                               onClick={() => setProfile(prev => ({
+                                 ...prev,
+                                 specialties: (prev.specialties ?? []).filter((_, i) => i !== index)
+                               }))}
+                               className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700"
+                             >
+                               ×
+                             </button>
+                           </Badge>
+                         ))}
+                       </div>
+                    </div>
+                  ) : (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                       {(profile.specialties ?? []).length > 0 ? (
+                         profile.specialties.map((specialty, index) => (
+                           <Badge key={index} variant="secondary">
+                             {specialty}
+                           </Badge>
+                         ))
+                       ) : (
+                         <span className="text-gray-500 text-sm">Nenhuma especialidade definida</span>
+                       )}
+                     </div>
+                  )}
                 </div>
 
                 {/* Social Links */}
@@ -290,7 +477,7 @@ export default function BrokerPage() {
                       <span className="text-sm text-gray-500 w-20">WhatsApp:</span>
                       {isEditing ? (
                         <Input
-                          value={profile.socialLinks.whatsapp || ''}
+                          value={profile.socialLinks.whatsapp ?? ''}
                           onChange={(e) => setProfile(prev => ({
                             ...prev,
                             socialLinks: { ...prev.socialLinks, whatsapp: e.target.value }
@@ -299,14 +486,14 @@ export default function BrokerPage() {
                           className="flex-1"
                         />
                       ) : (
-                        <span className="text-sm">{profile.socialLinks.whatsapp || 'Não informado'}</span>
+                        <span className="text-sm">{profile.socialLinks.whatsapp ?? 'Não informado'}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-500 w-20">Instagram:</span>
                       {isEditing ? (
                         <Input
-                          value={profile.socialLinks.instagram || ''}
+                          value={profile.socialLinks.instagram ?? ''}
                           onChange={(e) => setProfile(prev => ({
                             ...prev,
                             socialLinks: { ...prev.socialLinks, instagram: e.target.value }
@@ -315,7 +502,7 @@ export default function BrokerPage() {
                           className="flex-1"
                         />
                       ) : (
-                        <span className="text-sm">{profile.socialLinks.instagram || 'Não informado'}</span>
+                        <span className="text-sm">{profile.socialLinks.instagram ?? 'Não informado'}</span>
                       )}
                     </div>
                   </div>
@@ -385,44 +572,60 @@ export default function BrokerPage() {
                   {isEditing && (
                     <Button variant="outline" size="sm">
                       <Plus className="w-4 h-4 mr-2" />
-                      Adicionar
+                      Gerenciar
                     </Button>
                   )}
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {profile.highlights.map((property) => (
-                    <Card key={property.id} className="overflow-hidden">
-                      <div className="aspect-video bg-gray-200 relative">
-                        <div className="absolute top-2 right-2">
-                          <Badge className="bg-blue-600 text-white">
-                            Score: {property.score}
-                          </Badge>
-                        </div>
-                      </div>
-                      <CardContent className="p-4">
-                        <h4 className="font-semibold text-sm mb-2 line-clamp-2">
-                          {property.title}
-                        </h4>
-                        <div className="space-y-1 text-xs text-gray-600">
-                          <div className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />
-                            <span>{property.neighborhood}, {property.city}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <DollarSign className="w-3 h-3" />
-                            <span>{formatPrice(property.price)}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Building2 className="w-3 h-3" />
-                            <span>{property.area}m²</span>
+                {profile.highlights.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {profile.highlights.map((property) => (
+                      <Card key={property.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                        <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 relative">
+                          <div className="absolute top-2 right-2">
+                            <Badge className="bg-blue-600 text-white">
+                              Score: {property.score}
+                            </Badge>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                        <CardContent className="p-4">
+                          <h4 className="font-semibold text-sm mb-2 line-clamp-2">
+                            {property.title}
+                          </h4>
+                          <div className="space-y-1 text-xs text-gray-600">
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              <span>{property.neighborhood}, {property.city}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="w-3 h-3" />
+                              <span>{formatPrice(property.price)}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Building2 className="w-3 h-3" />
+                              <span>{property.area}m²</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Star className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">Nenhum imóvel em destaque</h4>
+                    <p className="text-gray-500 mb-4">
+                      Adicione imóveis ao seu portfólio para que apareçam em destaque na sua página pública
+                    </p>
+                    <Link href="/broker/properties">
+                      <Button variant="outline">
+                        <Building2 className="w-4 h-4 mr-2" />
+                        Ver Imóveis
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -435,18 +638,11 @@ export default function BrokerPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button variant="outline" className="h-20 flex-col gap-2">
-                    <Download className="w-6 h-6" />
-                    <span>Exportar PNG</span>
-                    <span className="text-xs text-gray-500">Card promocional</span>
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col gap-2">
-                    <Share2 className="w-6 h-6" />
-                    <span>Compartilhar</span>
-                    <span className="text-xs text-gray-500">Redes sociais</span>
-                  </Button>
-                </div>
+                <ShareExportButtons 
+                  brokerName={profile.name}
+                  brokerCompany={profile.company}
+                  brokerBio={profile.bio}
+                />
               </CardContent>
             </Card>
           </div>
@@ -454,9 +650,24 @@ export default function BrokerPage() {
 
         {/* Save Button */}
         {isEditing && (
-          <div className="fixed bottom-6 right-6">
-            <Button onClick={handleSave} size="lg" className="shadow-lg">
-              Salvar Alterações
+          <div className="fixed bottom-6 right-6 z-50">
+            <Button 
+              onClick={handleSave} 
+              size="lg" 
+              className="shadow-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              disabled={saving}
+            >
+              {saving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Salvar Alterações
+                </>
+              )}
             </Button>
           </div>
         )}

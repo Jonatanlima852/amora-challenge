@@ -1,36 +1,129 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# aMORA - MVP WhatsApp para Imóveis
 
-## Getting Started
+Uma plataforma inteligente para análise e gestão de imóveis com integração WhatsApp, desenvolvida em Next.js 15 e TypeScript.
 
-First, run the development server:
+## 🚀 Como Rodar
 
+### Pré-requisitos
+- Node.js 18+
+- Docker e Docker Compose
+- PostgreSQL
+- Redis
+
+### 1. Configurar variáveis de ambiente
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp env.example .env
+# Preencher as variáveis necessárias (Supabase, OpenAI, Evolution API)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Subir infraestrutura
+```bash
+cd evolution-api
+docker-compose up -d
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Instalar dependências e rodar
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Acesse: http://localhost:3000
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🏠 Funcionalidades Implementadas
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### **Sistema de Autenticação e Usuários**
+- **Login via WhatsApp**: Autenticação por número de telefone com verificação por código SMS
+- **Perfis de usuário**: Diferentes roles (USER, BROKER, ADMIN) com permissões específicas
+- **Sincronização automática**: Usuários do WhatsApp são automaticamente sincronizados com o banco de dados
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### **Gestão Inteligente de Imóveis**
+- **Parser automático com IA**: Sistema que analisa URLs de imóveis usando OpenAI GPT-4 para extrair informações automaticamente
+- **Suporte multi-plataforma**: Funciona com Zap Imóveis, Viva Real, OLX e outros sites
+- **Sistema de scoring (Índice aMORA)**: Algoritmo que avalia imóveis de 0-100 baseado em:
+  - Preço por m² (35% do score)
+  - Custo mensal total (25%)
+  - Aderência aos requisitos (20%)
+  - Tempo de deslocamento (10%)
+  - Liquidez do mercado (10%)
 
-## Deploy on Vercel
+### **Colaboração em Grupos**
+- **Households**: Sistema de grupos para famílias ou equipes compartilharem listas de imóveis
+- **Convites e permissões**: Sistema de convites com diferentes níveis de acesso (OWNER, MEMBER)
+- **Listas compartilhadas**: Cada grupo pode ter múltiplas listas de imóveis com notas e favoritos
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### **Integração WhatsApp (Evolution API)**
+- **Webhooks funcionais**: Recebe mensagens e eventos do WhatsApp em tempo real
+- **Sincronização bidirecional**: Usuários podem interagir tanto pela web quanto pelo WhatsApp
+- **Notificações automáticas**: Sistema de alertas para novos imóveis e atualizações
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### **Dashboard Inteligente**
+- **Visão geral personalizada**: Mostra propriedades recentes, grupos ativos e estatísticas
+- **Comparação de imóveis**: Interface para analisar múltiplas propriedades lado a lado
+- **Filtros avançados**: Busca por preço, localização, características e score
+
+---
+
+## 🏗️ Arquitetura e Organização do Código
+
+### **Estrutura de Pastas**
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── api/               # Endpoints da API
+│   │   ├── properties/    # CRUD de imóveis
+│   │   ├── groups/        # Gestão de grupos
+│   │   ├── auth/          # Autenticação
+│   │   └── webhooks/      # Webhooks WhatsApp
+│   ├── app/               # Área autenticada
+│   │   ├── properties/    # Páginas de imóveis
+│   │   ├── groups/        # Gestão de grupos
+│   │   └── profile/       # Perfil do usuário
+│   └── (public)/          # Páginas públicas
+├── components/             # Componentes React reutilizáveis
+├── services/               # Lógica de negócio
+│   ├── property/          # Serviços de imóveis
+│   ├── parsing/           # Parser com IA
+│   └── sync-whatsapp/     # Integração WhatsApp
+├── types/                  # Definições TypeScript
+├── lib/                    # Utilitários e configurações
+└── contexts/               # Contextos React (Auth, etc.)
+```
+
+### **Tecnologias Principais**
+- **Frontend**: Usei Next.js 15, TypeScript, Tailwind CSS
+- **Backend**: Usei a API Routes do Next.js, Prisma ORM
+- **Banco**: Usei PostgreSQL com Prisma, mas usei como banco postgreSQL o banco fornecido pelo supabase. Poderia subir um banco postgres local, mas para ficar mais fácil de observar os dados e por se tratar de um MVP preferi esta abordagem.
+- **Autenticação**: Usei uma mistura de Supabase Auth com alguns fluxos próprios
+- **IA**: OpenAI GPT-4 para parsing de imóveis
+- **WhatsApp**: Usei um Evolution API (self-hosted na AWS ou no docker local) pois era a mais confiável e gratuita que encontrei que me possibilitasse a integração com whatsapp
+
+### **Padrões de Código**
+- **Arquitetura em camadas**: Separação clara entre API, serviços e componentes
+- **TypeScript rigoroso**: Tipos bem definidos para todas as entidades
+- **Serviços modulares**: Cada funcionalidade tem seu próprio serviço
+- **Tratamento de erros**: Sistema robusto de fallbacks e tratamento de exceções
+- **Componentes reutilizáveis**: UI components baseados em Radix UI
+
+### **Sistema de Parsing**
+- **Parser principal com IA**: Usa GPT-4 para extrair dados de qualquer site de imóveis
+- **Fallback inteligente**: Sistema de backup quando a IA falha
+- **Configuração flexível**: Timeouts, retries e user agents configuráveis
+- **Tratamento SSL**: Suporte para diferentes configurações de certificados
+
+### **Banco de Dados**
+- **Schema relacional**: Usuários, imóveis, grupos e relacionamentos bem definidos
+- **Migrations automáticas**: Sistema de versionamento do banco com Prisma
+- **Índices otimizados**: Performance otimizada para consultas frequentes
+- **Relacionamentos complexos**: Suporte para membros de grupos, listas e favoritos
+
+### **Segurança e Performance**
+- **Middleware de autenticação**: Proteção de rotas autenticadas
+- **Validação de dados**: Zod para validação de schemas
+- **Rate limiting**: Proteção contra abuso da API
+- **Cache inteligente**: Redis para dados frequentemente acessados
+- **Lazy loading**: Carregamento sob demanda de componentes pesados
+
+Esta plataforma representa um MVP robusto e escalável para gestão de imóveis com integração WhatsApp, demonstrando boas práticas de desenvolvimento e arquitetura moderna.

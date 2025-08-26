@@ -1,348 +1,441 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { 
   Building2, 
   Plus, 
   Search, 
-  MapPin, 
-  Star,
+  Filter, 
+  Edit, 
+  Trash2, 
   Eye,
-  Edit,
-  Trash2,
-  BarChart3,
-  DollarSign,
-  Ruler,
-  Car
+  MapPin,
+  Home,
+  Car,
+  Users,
+  Calendar
 } from 'lucide-react';
 
 interface Property {
   id: string;
   title: string;
-  price: number;
-  area: number;
-  bedrooms: number;
-  bathrooms: number;
-  parking: number;
-  neighborhood: string;
-  city: string;
-  score: number;
-  status: 'active' | 'inactive' | 'pending';
+  price?: number;
+  m2?: number;
+  condo?: number;
+  iptu?: number;
+  rooms?: number;
+  parking?: number;
+  neigh?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  photos?: any;
+  score?: number;
+  status: string;
+  sourceUrl: string;
+  description?: string;
+  amenities?: any;
+  lastParsedAt?: string;
   createdAt: string;
-  imageUrl: string;
+  updatedAt: string;
+  lists: Array<{
+    listId: string;
+    listName: string;
+    householdId?: string;
+    householdName?: string;
+  }>;
 }
 
-export default function BrokerProperties() {
+interface PropertyStats {
+  total: number;
+  active: number;
+  pending: number;
+  sold: number;
+}
+
+export default function BrokerPropertiesPage() {
   const { userRole, loading } = useAuth();
   const router = useRouter();
   const [properties, setProperties] = useState<Property[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [stats, setStats] = useState<PropertyStats>({ total: 0, active: 0, pending: 0, sold: 0 });
+  const [loadingData, setLoadingData] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!loading && userRole !== 'BROKER' && userRole !== 'ADMIN') {
-      router.push('/properties');
-    }
-  }, [userRole, loading, router]);
+  // useEffect(() => {
+  //   // Só redireciona se não estiver carregando E o usuário não for corretor/admin
+  //   if (!loading && userRole && userRole !== 'BROKER' && userRole !== 'ADMIN') {
+  //     router.push('/app');
+  //   }
+  // }, [userRole, loading, router]);
 
-  // Mock data - substituir por dados reais
-  useEffect(() => {
-    const mockProperties: Property[] = [
-      {
-        id: '1',
-        title: 'Apartamento 2 quartos - Centro',
-        price: 450000,
-        area: 65,
-        bedrooms: 2,
-        bathrooms: 1,
-        parking: 1,
-        neighborhood: 'Centro',
-        city: 'São Paulo',
-        score: 85,
-        status: 'active',
-        createdAt: '2024-01-15',
-        imageUrl: '/placeholder.jpg'
-      },
-      {
-        id: '2',
-        title: 'Casa 3 quartos - Jardins',
-        price: 1200000,
-        area: 120,
-        bedrooms: 3,
-        bathrooms: 2,
-        parking: 2,
-        neighborhood: 'Jardins',
-        city: 'São Paulo',
-        score: 92,
-        status: 'active',
-        createdAt: '2024-01-10',
-        imageUrl: '/placeholder.jpg'
-      },
-      {
-        id: '3',
-        title: 'Studio - Vila Madalena',
-        price: 280000,
-        area: 35,
-        bedrooms: 1,
-        bathrooms: 1,
-        parking: 0,
-        neighborhood: 'Vila Madalena',
-        city: 'São Paulo',
-        score: 78,
-        status: 'pending',
-        createdAt: '2024-01-20',
-        imageUrl: '/placeholder.jpg'
+      useEffect(() => {
+      if (userRole === 'BROKER' || userRole === 'ADMIN') {
+        fetchProperties();
       }
-    ];
-    setProperties(mockProperties);
-  }, []);
+    }, [userRole]);
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
+  const fetchProperties = async () => {
+    try {
+      setLoadingData(true);
+      setError(null);
+      
+      const response = await fetch('/api/broker/properties');
+      if (!response.ok) {
+        throw new Error('Erro ao buscar propriedades');
+      }
+      
+      const data = await response.json();
+      if (data.success) {
+        setProperties(data.properties);
+        setStats(data.stats);
+      } else {
+        throw new Error(data.error || 'Erro desconhecido');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      setError(errorMessage);
+      console.error('Erro ao buscar propriedades:', err);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  const formatPrice = (price?: number) => {
+    if (!price) return 'Preço não informado';
+    if (price >= 1000000) {
+      return `R$ ${(price / 1000000).toFixed(1)}M`;
+    } else if (price >= 1000) {
+      return `R$ ${(price / 1000).toFixed(0)}k`;
+    }
+    return `R$ ${price}`;
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR');
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      'ACTIVE': { label: 'Ativo', variant: 'default', color: 'bg-green-100 text-green-800' },
+      'PENDING': { label: 'Pendente', variant: 'secondary', color: 'bg-yellow-100 text-yellow-800' },
+      'SOLD': { label: 'Vendido', variant: 'outline', color: 'bg-blue-100 text-blue-800' },
+      'INACTIVE': { label: 'Inativo', variant: 'secondary', color: 'bg-gray-100 text-gray-800' },
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig['INACTIVE'];
+    
+    return (
+      <Badge className={config.color}>
+        {config.label}
+      </Badge>
+    );
+  };
+
+  const filteredProperties = properties.filter(property => {
+    const matchesSearch = property.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         property.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         property.neigh?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || property.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  if (loading || loadingData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando propriedades...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Building2 className="w-8 h-8 text-red-600" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Erro ao carregar propriedades</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={fetchProperties}>
+            Tentar novamente
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   if (userRole !== 'BROKER' && userRole !== 'ADMIN') {
     return null;
   }
 
-  const filteredProperties = properties.filter(property => {
-    const matchesSearch = property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         property.neighborhood.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || property.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(price);
-  };
-
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      active: 'bg-green-100 text-green-800',
-      inactive: 'bg-gray-100 text-gray-800',
-      pending: 'bg-yellow-100 text-yellow-800'
-    };
-    
-    const labels = {
-      active: 'Ativo',
-      inactive: 'Inativo',
-      pending: 'Pendente'
-    };
-
-    return (
-      <Badge className={variants[status as keyof typeof variants]}>
-        {labels[status as keyof typeof labels]}
-      </Badge>
-    );
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Meus Imóveis</h1>
-              <p className="text-gray-600 mt-2">Gerencie seu portfólio de propriedades</p>
-            </div>
-            <Link href="/broker/properties/new">
-              <Button className="flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Adicionar Imóvel
-              </Button>
-            </Link>
+    <div className="max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Gerenciar Imóveis</h1>
+            <p className="text-gray-600 mt-2">Gerencie seu portfólio de imóveis</p>
           </div>
+          <Link href="/broker/properties/new">
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Imóvel
+            </Button>
+          </Link>
         </div>
+      </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total de Imóveis</p>
-                  <p className="text-2xl font-bold text-gray-900">{properties.length}</p>
-                </div>
-                <Building2 className="w-8 h-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Ativos</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {properties.filter(p => p.status === 'active').length}
-                  </p>
-                </div>
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <Star className="w-4 h-4 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Média de Score</p>
-                  <p className="text-2xl font-bold text-purple-600">
-                    {Math.round(properties.reduce((acc, p) => acc + p.score, 0) / properties.length)}
-                  </p>
-                </div>
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                  <BarChart3 className="w-4 h-4 text-purple-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Valor Total</p>
-                  <p className="text-2xl font-bold text-orange-600">
-                    {formatPrice(properties.reduce((acc, p) => acc + p.price, 0)).split(',')[0]}M
-                  </p>
-                </div>
-                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                  <DollarSign className="w-4 h-4 text-orange-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filters */}
-        <Card className="mb-6">
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <Card>
           <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder="Buscar por título ou bairro..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full md:w-48">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os Status</SelectItem>
-                  <SelectItem value="active">Ativos</SelectItem>
-                  <SelectItem value="inactive">Inativos</SelectItem>
-                  <SelectItem value="pending">Pendentes</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-gray-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Properties Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProperties.map((property) => (
-            <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="aspect-video bg-gray-200 relative">
-                <div className="absolute top-3 right-3">
-                  {getStatusBadge(property.status)}
-                </div>
-                <div className="absolute bottom-3 left-3">
-                  <Badge className="bg-blue-600 text-white">
-                    Score: {property.score}
-                  </Badge>
-                </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Ativos</p>
+                <p className="text-2xl font-bold text-green-600">{stats.active}</p>
               </div>
-              
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Pendentes</p>
+                <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+              </div>
+              <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-yellow-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Vendidos</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.sold}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filtros e Busca */}
+      <div className="mb-6 flex flex-col sm:flex-row gap-4">
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              type="text"
+              placeholder="Buscar por título, cidade ou bairro..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+        
+        <div className="flex gap-2">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">Todos os Status</option>
+            <option value="ACTIVE">Ativos</option>
+            <option value="PENDING">Pendentes</option>
+            <option value="SOLD">Vendidos</option>
+            <option value="INACTIVE">Inativos</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Lista de Propriedades */}
+      <div className="space-y-4">
+        {filteredProperties.length === 0 ? (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma propriedade encontrada</h3>
+              <p className="text-gray-500 mb-4">
+                {searchQuery || statusFilter !== 'all' 
+                  ? 'Tente ajustar os filtros de busca'
+                  : 'Comece adicionando sua primeira propriedade'
+                }
+              </p>
+              <Link href="/broker/properties/new">
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Primeira Propriedade
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredProperties.map((property) => (
+            <Card key={property.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
-                <div className="mb-4">
-                  <h3 className="font-semibold text-lg text-gray-900 mb-2 line-clamp-2">
-                    {property.title}
-                  </h3>
-                  <div className="flex items-center gap-1 text-gray-600 mb-2">
-                    <MapPin className="w-4 h-4" />
-                    <span className="text-sm">{property.neighborhood}, {property.city}</span>
+                <div className="flex flex-col lg:flex-row gap-6">
+                  {/* Imagem */}
+                  <div className="w-full lg:w-48 h-32 bg-gray-200 rounded-lg flex items-center justify-center">
+                    {property.photos && property.photos.length > 0 ? (
+                      <img
+                        src={property.photos[0]}
+                        alt={property.title}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    ) : (
+                      <Building2 className="w-12 h-12 text-gray-400" />
+                    )}
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-green-600" />
-                    <span className="text-sm font-medium">{formatPrice(property.price)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Ruler className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm">{property.area}m²</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-purple-600" />
-                    <span className="text-sm">{property.bedrooms} quartos</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Car className="w-4 h-4 text-orange-600" />
-                    <span className="text-sm">{property.parking} vagas</span>
-                  </div>
-                </div>
+                  {/* Informações */}
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                          {property.title || 'Título não informado'}
+                        </h3>
+                        <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+                          {property.city && (
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-4 h-4" />
+                              {property.neigh && property.city ? `${property.neigh}, ${property.city}` : property.city}
+                            </div>
+                          )}
+                          {property.rooms && (
+                            <div className="flex items-center gap-1">
+                              <Home className="w-4 h-4" />
+                              {property.rooms} quarto{property.rooms > 1 ? 's' : ''}
+                            </div>
+                          )}
+                          {property.parking && (
+                            <div className="flex items-center gap-1">
+                              <Car className="w-4 h-4" />
+                              {property.parking} vaga{property.parking > 1 ? 's' : ''}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(property.status)}
+                        {property.score && (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                            Score: {property.score}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
 
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Eye className="w-4 h-4 mr-2" />
-                    Ver
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Edit className="w-4 h-4 mr-2" />
-                    Editar
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                    {/* Detalhes */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Preço</p>
+                        <p className="text-lg font-semibold text-green-600">{formatPrice(property.price)}</p>
+                      </div>
+                      {property.m2 && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Área</p>
+                          <p className="text-lg font-semibold text-gray-900">{property.m2}m²</p>
+                        </div>
+                      )}
+                      {property.condo && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Condomínio</p>
+                          <p className="text-lg font-semibold text-gray-900">R$ {property.condo}</p>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Adicionado</p>
+                        <p className="text-sm text-gray-900">{formatDate(property.createdAt)}</p>
+                      </div>
+                    </div>
+
+                    {/* Grupos */}
+                    {property.lists.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-sm font-medium text-gray-600 mb-2">Presente em grupos:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {property.lists.map((list) => (
+                            <Badge key={list.listId} variant="secondary" className="text-xs">
+                              {list.householdName ? `${list.householdName} - ${list.listName}` : list.listName}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Ações */}
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Calendar className="w-4 h-4" />
+                        Última atualização: {formatDate(property.updatedAt)}
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Link href={`/broker/properties/${property.id}`}>
+                          <Button variant="outline" size="sm">
+                            <Eye className="w-4 h-4 mr-2" />
+                            Ver
+                          </Button>
+                        </Link>
+                        <Link href={`/broker/properties/${property.id}/edit`}>
+                          <Button variant="outline" size="sm">
+                            <Edit className="w-4 h-4 mr-2" />
+                            Editar
+                          </Button>
+                        </Link>
+                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Excluir
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
-
-        {filteredProperties.length === 0 && (
-          <Card className="text-center py-12">
-            <CardContent>
-              <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum imóvel encontrado</h3>
-              <p className="text-gray-600 mb-4">
-                {searchTerm || statusFilter !== 'all' 
-                  ? 'Tente ajustar os filtros de busca'
-                  : 'Comece adicionando seu primeiro imóvel'
-                }
-              </p>
-              {!searchTerm && statusFilter === 'all' && (
-                <Link href="/broker/properties/new">
-                  <Button>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Adicionar Primeiro Imóvel
-                  </Button>
-                </Link>
-              )}
-            </CardContent>
-          </Card>
+          ))
         )}
       </div>
     </div>

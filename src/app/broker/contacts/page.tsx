@@ -56,11 +56,11 @@ export default function BrokerContacts() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
 
-  useEffect(() => {
-    if (!loading && userRole !== 'BROKER' && userRole !== 'ADMIN') {
-      router.push('/properties');
-    }
-  }, [userRole, loading, router]);
+  // useEffect(() => {
+  //   if (!loading && userRole !== 'BROKER' && userRole !== 'ADMIN') {
+  //     router.push('/app');
+  //   }
+  // }, [userRole, loading, router]);
 
   // Mock data - substituir por dados reais
   useEffect(() => {

@@ -60,11 +60,11 @@ export default function BrokerGroups() {
   const [searchTerm, setSearchTerm] = useState('');
   // const [selectedGroup, setSelectedGroup] = useState<Group | null>(null); // TODO: Implementar seleção de grupo
 
-  useEffect(() => {
-    if (!loading && userRole !== 'BROKER' && userRole !== 'ADMIN') {
-      router.push('/properties');
-    }
-  }, [userRole, loading, router]);
+  // useEffect(() => {
+  //   if (!loading && userRole !== 'BROKER' && userRole !== 'ADMIN') {
+  //     router.push('/app');
+  //   }
+  // }, [userRole, loading, router]);
 
   // Mock data - substituir por dados reais
   useEffect(() => {

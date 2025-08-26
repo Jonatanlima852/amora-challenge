@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useBrokerStats } from '@/hooks/useBrokerStats';
 import { 
   Building2, 
   Users, 
@@ -16,31 +17,88 @@ import {
   MessageCircle,
   TrendingUp,
   Star,
-  Calendar
+  Calendar,
+  AlertTriangle
 } from 'lucide-react';
 
 export default function BrokerHome() {
   const { userRole, loading } = useAuth();
   const router = useRouter();
-  const [stats] = useState({
-    totalProperties: 24,
-    activeProperties: 18,
-    totalContacts: 45,
-    activeContacts: 32,
-    totalGroups: 8,
-    activeGroups: 6,
-    monthlyViews: 156,
-    conversionRate: 12.5
+  const { stats, recentActivity, loading: loadingStats, error } = useBrokerStats();
+  
+  // Estado local para compatibilidade com o código existente
+  const [localStats, setLocalStats] = useState({
+    totalProperties: 0,
+    activeProperties: 0,
+    pendingProperties: 0,
+    totalContacts: 0,
+    activeContacts: 0,
+    totalGroups: 0,
+    activeGroups: 0,
+    monthlyViews: 0,
+    conversionRate: 0
   });
 
-  useEffect(() => {
-    if (!loading && userRole !== 'BROKER' && userRole !== 'ADMIN') {
-      router.push('/properties');
-    }
-  }, [userRole, loading, router]);
+  // useEffect(() => {
+  //   // Só redireciona se não estiver carregando E o usuário não for corretor/admin
+  //   if (!loading && userRole && userRole !== 'BROKER' && userRole !== 'ADMIN') {
+  //     router.push('/app');
+  //   }
+  // }, [userRole, loading, router]);
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
+  useEffect(() => {
+    if (stats) {
+      setLocalStats({
+        totalProperties: stats.properties.total,
+        activeProperties: stats.properties.active,
+        pendingProperties: stats.properties.pending || 0,
+        totalContacts: stats.contacts.total,
+        activeContacts: stats.contacts.active,
+        totalGroups: stats.groups.total,
+        activeGroups: stats.groups.active,
+        monthlyViews: stats.performance.monthlyViews,
+        conversionRate: stats.performance.conversionRate
+      });
+    }
+  }, [stats]);
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'há alguns minutos';
+    if (diffInHours < 24) return `há ${diffInHours} hora${diffInHours > 1 ? 's' : ''}`;
+    if (diffInHours < 48) return 'há 1 dia';
+    return `há ${Math.floor(diffInHours / 24)} dias`;
+  };
+
+      if (loading || loadingStats) {
+      return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="w-8 h-8 text-red-600" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Erro ao carregar dashboard</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Tentar novamente
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   if (userRole !== 'BROKER' && userRole !== 'ADMIN') {
@@ -61,8 +119,8 @@ export default function BrokerHome() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Imóveis Ativos</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.activeProperties}</p>
-                <p className="text-xs text-gray-500">de {stats.totalProperties} total</p>
+                <p className="text-2xl font-bold text-gray-900">{localStats.activeProperties}</p>
+                <p className="text-xs text-gray-500">de {localStats.totalProperties} total</p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                 <Building2 className="w-6 h-6 text-blue-600" />
@@ -76,8 +134,8 @@ export default function BrokerHome() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Contatos Ativos</p>
-                <p className="text-2xl font-bold text-green-600">{stats.activeContacts}</p>
-                <p className="text-xs text-gray-500">de {stats.totalContacts} total</p>
+                <p className="text-2xl font-bold text-green-600">{localStats.activeContacts}</p>
+                <p className="text-xs text-gray-500">de {localStats.totalContacts} total</p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                 <Users className="w-6 h-6 text-green-600" />
@@ -91,8 +149,8 @@ export default function BrokerHome() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Grupos Ativos</p>
-                <p className="text-2xl font-bold text-purple-600">{stats.activeGroups}</p>
-                <p className="text-xs text-gray-500">de {stats.totalGroups} total</p>
+                <p className="text-2xl font-bold text-purple-600">{localStats.activeGroups}</p>
+                <p className="text-xs text-gray-500">de {localStats.totalGroups} total</p>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
                 <MessageCircle className="w-6 h-6 text-purple-600" />
@@ -106,7 +164,7 @@ export default function BrokerHome() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Taxa de Conversão</p>
-                <p className="text-2xl font-bold text-orange-600">{stats.conversionRate}%</p>
+                <p className="text-2xl font-bold text-orange-600">{localStats.conversionRate}%</p>
                 <p className="text-xs text-gray-500">este mês</p>
               </div>
               <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
@@ -132,7 +190,7 @@ export default function BrokerHome() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">{stats.activeProperties} imóveis ativos</span>
+                <span className="text-sm text-gray-600">{localStats.activeProperties} imóveis ativos</span>
                 <Badge variant="secondary">Ver todos</Badge>
               </div>
             </CardContent>
@@ -152,7 +210,7 @@ export default function BrokerHome() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">{stats.activeContacts} contatos ativos</span>
+                <span className="text-sm text-gray-600">{localStats.activeContacts} contatos ativos</span>
                 <Badge variant="secondary">Ver todos</Badge>
               </div>
             </CardContent>
@@ -172,7 +230,7 @@ export default function BrokerHome() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">{stats.activeGroups} grupos ativos</span>
+                <span className="text-sm text-gray-600">{localStats.activeGroups} grupos ativos</span>
                 <Badge variant="secondary">Ver todos</Badge>
               </div>
             </CardContent>
@@ -241,34 +299,37 @@ export default function BrokerHome() {
         <Card>
           <CardHeader>
             <CardTitle>Atividade Recente</CardTitle>
-            <CardDescription>Últimas ações e interações</CardDescription>
+            <CardDescription>Últimas propriedades adicionadas</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Novo imóvel adicionado</p>
-                  <p className="text-xs text-gray-500">Apartamento 2 quartos - Centro</p>
+              {recentActivity.length > 0 ? (
+                recentActivity.map((activity, index) => (
+                  <div key={activity.id} className="flex items-center gap-3">
+                    <div className={`w-2 h-2 rounded-full ${
+                      activity.status === 'ACTIVE' ? 'bg-green-500' :
+                      activity.status === 'PENDING' ? 'bg-yellow-500' :
+                      activity.status === 'SOLD' ? 'bg-blue-500' : 'bg-gray-500'
+                    }`}></div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{activity.title}</p>
+                      <p className="text-xs text-gray-500">{activity.location}</p>
+                      {activity.price && (
+                        <p className="text-xs text-green-600 font-medium">
+                          R$ {activity.price.toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-400">
+                      {formatTimeAgo(activity.createdAt)}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-sm text-gray-500">Nenhuma atividade recente</p>
                 </div>
-                <span className="text-xs text-gray-400">2h atrás</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Contato atualizado</p>
-                  <p className="text-xs text-gray-500">João Silva - preferências atualizadas</p>
-                </div>
-                <span className="text-xs text-gray-400">5h atrás</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Novo grupo criado</p>
-                  <p className="text-xs text-gray-500">Família Costa - Casa Jardins</p>
-                </div>
-                <span className="text-xs text-gray-400">1 dia atrás</span>
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -280,30 +341,46 @@ export default function BrokerHome() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Calendar className="w-4 h-4 text-orange-500" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Reativar contatos inativos</p>
-                  <p className="text-xs text-gray-500">3 contatos sem atividade há 7+ dias</p>
+              {localStats.pendingProperties > 0 && (
+                <div className="flex items-center gap-3">
+                  <Calendar className="w-4 h-4 text-orange-500" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Revisar propriedades pendentes</p>
+                    <p className="text-xs text-gray-500">{localStats.pendingProperties} imóveis aguardando análise</p>
+                  </div>
+                  <Badge variant="outline" className="text-xs">Urgente</Badge>
                 </div>
-                <Badge variant="outline" className="text-xs">Hoje</Badge>
-              </div>
-              <div className="flex items-center gap-3">
-                <Star className="w-4 h-4 text-blue-500" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Atualizar destaques</p>
-                  <p className="text-xs text-gray-500">Adicionar novos imóveis à página pública</p>
+              )}
+              {localStats.totalContacts > 0 && (
+                <div className="flex items-center gap-3">
+                  <Users className="w-4 h-4 text-blue-500" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Contatar leads inativos</p>
+                    <p className="text-xs text-gray-500">{Math.floor(localStats.totalContacts * 0.3)} contatos sem atividade</p>
+                  </div>
+                  <Badge variant="outline" className="text-xs">Esta semana</Badge>
                 </div>
-                <Badge variant="outline" className="text-xs">Esta semana</Badge>
-              </div>
-              <div className="flex items-center gap-3">
-                <MessageCircle className="w-4 h-4 text-green-500" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Enviar newsletter</p>
-                  <p className="text-xs text-gray-500">Novos imóveis similares para leads</p>
+              )}
+              {localStats.activeProperties > 0 && (
+                <div className="flex items-center gap-3">
+                  <Star className="w-4 h-4 text-green-500" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Atualizar destaques</p>
+                    <p className="text-xs text-gray-500">Adicionar novos imóveis à página pública</p>
+                  </div>
+                  <Badge variant="outline" className="text-xs">Esta semana</Badge>
                 </div>
-                <Badge variant="outline" className="text-xs">Próxima semana</Badge>
-              </div>
+              )}
+              {localStats.totalGroups === 0 && (
+                <div className="flex items-center gap-3">
+                  <MessageCircle className="w-4 h-4 text-purple-500" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Criar primeiro grupo</p>
+                    <p className="text-xs text-gray-500">Organize seus clientes em grupos</p>
+                  </div>
+                  <Badge variant="outline" className="text-xs">Recomendado</Badge>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

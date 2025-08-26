@@ -1,4 +1,4 @@
-# aMORA WhatsApp MVP — Visão Geral dos problemas e endereçamento de soluções
+# aMORA Challenge — Visão Geral dos problemas e endereçamento de soluções
 
 Este documento explicita os problemas e como foram adequadamente endereçados pela solução.
 

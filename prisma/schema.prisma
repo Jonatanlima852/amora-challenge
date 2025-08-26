@@ -31,6 +31,14 @@ model User {
   verified   Boolean  @default(false)  // Telefone verificado
   role       UserRole @default(USER)
   
+  // Campos para página pública do corretor
+  slug       String?  @unique // URL personalizada (ex: joao-silva)
+  bio        String?  // Biografia do corretor
+  avatar     String?  // URL da foto de perfil
+  company    String?  // Nome da empresa
+  specialties Json?   // Array de especialidades
+  socialLinks Json?   // Links para redes sociais
+  
   // Relacionamentos
   properties   Property[]
   lists        List[]
@@ -43,6 +51,7 @@ model User {
   @@index([phoneE164])
   @@index([email])
   @@index([supabaseId])
+  @@index([slug])
 }
 
 model Household {

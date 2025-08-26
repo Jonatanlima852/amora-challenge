@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { MessageCircle, MapPin, Phone, Mail, Star, Download, Share2, Home } from "lucide-react"
+import { MessageCircle, MapPin, Phone, Mail, Star, Download, Share2, Home, Building2 } from "lucide-react"
 import Link from "next/link"
 
 interface Broker {
@@ -13,7 +13,9 @@ interface Broker {
   email: string
   rating: number
   specialties: string[]
-  photo: string
+  avatar: string
+  company: string
+  city: string
   highlights: Property[]
 }
 
@@ -25,57 +27,64 @@ interface Property {
   neighborhood: string
   type: string
   amoraScore: number
-  image: string
+  image: string | null
+  details: {
+    rooms?: number
+    parking?: number
+    condo?: number
+    iptu?: number
+  }
 }
 
-// Mock data - em produção viria da API
-const mockBroker: Broker = {
-  id: "1",
-  name: "João Silva",
-  slug: "joao-silva",
-  bio: "Especialista em imóveis residenciais com mais de 10 anos de experiência. Atendo principalmente as regiões de Pinheiros, Vila Madalena e Itaim Bibi.",
-  phone: "+55 11 99999-9999",
-  email: "joao.silva@email.com",
-  rating: 4.9,
-  specialties: ["Residencial", "Luxo", "Novos lançamentos"],
-  photo: "/api/placeholder/150/150",
-  highlights: [
-    {
-      id: "1",
-      title: "Apartamento 3 quartos - Pinheiros",
-      price: "R$ 1.200.000",
-      area: "120m²",
-      neighborhood: "Pinheiros",
-      type: "Apartamento",
-      amoraScore: 85,
-      image: "/api/placeholder/300/200"
-    },
-    {
-      id: "2",
-      title: "Casa 4 quartos - Vila Madalena",
-      price: "R$ 2.500.000",
-      area: "180m²",
-      neighborhood: "Vila Madalena",
-      type: "Casa",
-      amoraScore: 92,
-      image: "/api/placeholder/300/200"
-    },
-    {
-      id: "3",
-      title: "Cobertura 2 quartos - Itaim Bibi",
-      price: "R$ 3.800.000",
-      area: "150m²",
-      neighborhood: "Itaim Bibi",
-      type: "Cobertura",
-      amoraScore: 88,
-      image: "/api/placeholder/300/200"
-    }
-  ]
-}
+// Função para obter iniciais do nome
+const getInitials = (name: string) => {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase();
+};
+
+// Função para formatar especialidades
+const formatSpecialties = (specialties: any) => {
+  if (!specialties || !Array.isArray(specialties)) return ['Residencial'];
+  return specialties;
+};
 
 export default async function BrokerPage({ params }: { params: Promise<{ slug: string }> }) {
-  // const { slug } = await params; // TODO: Implementar busca por slug
-  const broker = mockBroker // Em produção, buscar por slug
+  const { slug } = await params;
+  
+  // Buscar dados do corretor da API
+  let broker = null;
+  let error = null;
+  
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/broker/public/${slug}`, {
+      cache: 'no-store'
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      broker = data.broker;
+    } else {
+      error = 'Corretor não encontrado';
+    }
+  } catch (err) {
+    error = 'Erro ao carregar perfil do corretor';
+  }
+
+  if (error || !broker) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">⚠️</span>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Página não encontrada</h2>
+          <p className="text-gray-600 mb-4">{error || 'O corretor solicitado não foi encontrado'}</p>
+          <Link href="/" className="text-blue-600 hover:text-blue-800">
+            Voltar ao início
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -117,17 +126,30 @@ export default async function BrokerPage({ params }: { params: Promise<{ slug: s
           <Card className="mb-12 shadow-xl overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-white">
               <div className="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
-                <div className="w-32 h-32 bg-white/20 rounded-full flex items-center justify-center">
-                  <span className="text-4xl font-bold">{broker.name.split(' ').map(n => n[0]).join('')}</span>
+                <div className="w-32 h-32 bg-white/20 rounded-full flex items-center justify-center overflow-hidden">
+                  {broker.avatar ? (
+                    <img 
+                      src={broker.avatar} 
+                      alt={broker.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-4xl font-bold text-white">
+                      {getInitials(broker.name)}
+                    </span>
+                  )}
                 </div>
                 
                 <div className="flex-1 text-center md:text-left">
                   <h1 className="text-3xl md:text-4xl font-bold mb-2">{broker.name}</h1>
-                  <p className="text-xl text-blue-100 mb-4">{broker.bio}</p>
+                  {broker.company && (
+                    <p className="text-lg text-blue-100 mb-2">{broker.company}</p>
+                  )}
+                  <p className="text-xl text-blue-100 mb-4">{broker.bio || 'Corretor especializado em imóveis residenciais'}</p>
                   
                   <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-6">
-                    {broker.specialties.map(specialty => (
-                      <Badge key={specialty} variant="secondary" className="bg-white/20 text-white border-white/30">
+                    {formatSpecialties(broker.specialties).map((specialty, index) => (
+                      <Badge key={index} variant="secondary" className="bg-white/20 text-white border-white/30">
                         {specialty}
                       </Badge>
                     ))}
@@ -163,7 +185,7 @@ export default async function BrokerPage({ params }: { params: Promise<{ slug: s
                   </div>
                   <div className="flex items-center space-x-3">
                     <MapPin className="w-5 h-5 text-blue-600" />
-                    <span className="text-lg">São Paulo, SP</span>
+                    <span className="text-lg">{broker.city || 'Localização não informada'}</span>
                   </div>
                 </div>
                 
@@ -192,35 +214,74 @@ export default async function BrokerPage({ params }: { params: Promise<{ slug: s
             </div>
             
             <div className="grid md:grid-cols-3 gap-6">
-              {broker.highlights.map(property => (
-                <Card key={property.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-                  <div className="aspect-video bg-gray-200 rounded-t-lg flex items-center justify-center">
-                    <span className="text-gray-500">Imagem do imóvel</span>
-                  </div>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge className="bg-blue-100 text-blue-800">
-                        {property.type}
-                      </Badge>
-                      <Badge className={property.amoraScore >= 80 ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}>
-                        {property.amoraScore}/100
-                      </Badge>
+              {broker.highlights.length > 0 ? (
+                broker.highlights.map(property => (
+                  <Card key={property.id} className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
+                    <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-t-lg overflow-hidden relative">
+                      {property.image ? (
+                        <img 
+                          src={property.image} 
+                          alt={property.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Building2 className="w-16 h-16 text-gray-400" />
+                        </div>
+                      )}
+                      <div className="absolute top-3 right-3">
+                        <Badge className={property.amoraScore >= 80 ? "bg-green-500 text-white" : "bg-yellow-500 text-white"}>
+                          {property.amoraScore}/100
+                        </Badge>
+                      </div>
                     </div>
-                    
-                    <h3 className="font-semibold text-lg mb-2">{property.title}</h3>
-                    <p className="text-2xl font-bold text-blue-600 mb-2">{property.price}</p>
-                    
-                    <div className="flex items-center justify-between text-sm text-gray-600">
-                      <span>{property.area}</span>
-                      <span>{property.neighborhood}</span>
-                    </div>
-                    
-                    <Button className="w-full mt-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
-                      Ver detalhes
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between mb-3">
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          {property.type}
+                        </Badge>
+                      </div>
+                      
+                      <h3 className="font-semibold text-lg mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                        {property.title}
+                      </h3>
+                      <p className="text-2xl font-bold text-green-600 mb-3">{property.price}</p>
+                      
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-center justify-between text-sm text-gray-600">
+                          <span className="flex items-center gap-1">
+                            <Building2 className="w-4 h-4" />
+                            {property.area}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-4 h-4" />
+                            {property.neighborhood}
+                          </span>
+                        </div>
+                        
+                        {property.details.rooms && (
+                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                            <span>🛏️ {property.details.rooms} quarto{property.details.rooms > 1 ? 's' : ''}</span>
+                            {property.details.parking && (
+                              <span>🚗 {property.details.parking} vaga{property.details.parking > 1 ? 's' : ''}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-200">
+                        Ver detalhes
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <div className="col-span-3 text-center py-12">
+                  <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum imóvel em destaque</h3>
+                  <p className="text-gray-500">Este corretor ainda não possui imóveis em destaque</p>
+                </div>
+              )}
             </div>
           </div>
 

@@ -10,9 +10,11 @@ import {
   MessageCircleIcon, 
   GlobeIcon,
   BarChart3Icon,
-  SettingsIcon
+  SettingsIcon,
+  UserCircleIcon
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBrokerStats } from "@/hooks/useBrokerStats";
 
 const navigation = [
   { name: "Dashboard", href: "/broker", icon: HomeIcon },
@@ -26,7 +28,8 @@ const navigation = [
 
 export function BrokerSidebar() {
   const pathname = usePathname();
-  const { userRole } = useAuth();
+  const { userRole, user } = useAuth();
+  const { stats } = useBrokerStats();
 
   // Filtrar navegação baseado no papel do usuário
   const filteredNavigation = navigation.filter(item => {
@@ -36,10 +39,16 @@ export function BrokerSidebar() {
     return true;
   });
 
+  const getUserDisplayName = () => {
+    if (user?.user_metadata?.name) return user.user_metadata.name;
+    if (user?.email) return user.email.split('@')[0];
+    return "Corretor";
+  };
+
   return (
     <div className="w-64 bg-white shadow-lg border-r border-gray-200">
       <div className="p-6">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mb-4">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-lg">a</span>
           </div>
@@ -47,6 +56,15 @@ export function BrokerSidebar() {
           <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
             Corretor
           </span>
+        </div>
+        
+        {/* Informações do Usuário */}
+        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+          <UserCircleIcon className="w-8 h-8 text-gray-400" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">{getUserDisplayName()}</p>
+            <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+          </div>
         </div>
       </div>
       
@@ -80,15 +98,21 @@ export function BrokerSidebar() {
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600">Imóveis Ativos</span>
-              <span className="font-semibold text-blue-600">18</span>
+              <span className="font-semibold text-blue-600">
+                {stats?.properties.active || 0}
+              </span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600">Contatos</span>
-              <span className="font-semibold text-green-600">45</span>
+              <span className="font-semibold text-green-600">
+                {stats?.contacts.active || 0}
+              </span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600">Grupos</span>
-              <span className="font-semibold text-purple-600">8</span>
+              <span className="font-semibold text-purple-600">
+                {stats?.groups.active || 0}
+              </span>
             </div>
           </div>
         </div>
