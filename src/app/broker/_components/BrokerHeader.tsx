@@ -63,36 +63,11 @@ export function BrokerHeader() {
             </div>
           </div>
 
-          {/* Ações Rápidas */}
-          <div className="hidden md:flex items-center gap-2">
-            <Link href="/broker/properties/new">
-              <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="w-4 h-4 mr-2" />
-                Novo Imóvel
-              </Button>
-            </Link>
-            <Link href="/broker/contacts">
-              <Button size="sm" variant="outline">
-                <Plus className="w-4 h-4 mr-2" />
-                Novo Contato
-              </Button>
-            </Link>
-          </div>
+          
         </div>
 
         {/* Notificações e Perfil */}
-        <div className="flex items-center gap-4">
-          {/* Notificações */}
-          <Button variant="ghost" size="icon" className="relative">
-            <BellIcon className="w-5 h-5" />
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-          </Button>
-
-          {/* WhatsApp Status */}
-          <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
-            <MessageCircle className="w-4 h-4 text-green-600" />
-            <span className="text-xs text-green-700 font-medium">WhatsApp Ativo</span>
-          </div>
+        <div className="flex items-center gap-4">          
 
           {/* Página Pública */}
           <Link href="/broker/page">

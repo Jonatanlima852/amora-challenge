@@ -42,7 +42,8 @@ export async function GET(request: NextRequest) {
             avatar: true,
             company: true,
             bio: true,
-            slug: true
+            slug: true,
+            phoneE164: true
           }
         }
       },
@@ -66,7 +67,8 @@ export async function GET(request: NextRequest) {
             avatar: true,
             company: true,
             bio: true,
-            slug: true
+            slug: true,
+            phoneE164: true
           }
         }
       },
@@ -86,6 +88,7 @@ export async function GET(request: NextRequest) {
         brokerCompany: invite.broker.company,
         brokerBio: invite.broker.bio,
         brokerSlug: invite.broker.slug,
+        brokerPhone: invite.broker.phoneE164,
         notes: invite.notes,
         invitedAt: invite.invitedAt
       })),
@@ -98,6 +101,7 @@ export async function GET(request: NextRequest) {
         brokerCompany: invite.broker.company,
         brokerBio: invite.broker.bio,
         brokerSlug: invite.broker.slug,
+        brokerPhone: invite.broker.phoneE164,
         notes: invite.notes,
         invitedAt: invite.invitedAt,
         respondedAt: invite.respondedAt

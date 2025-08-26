@@ -19,7 +19,9 @@ import {
   AlertCircle,
   Clock,
   UserCheck,
-  UserX
+  UserX,
+  Smartphone,
+  ExternalLink
 } from 'lucide-react';
 
 interface PendingInvite {
@@ -44,6 +46,7 @@ interface AcceptedInvite {
   brokerCompany?: string;
   brokerBio?: string;
   brokerSlug?: string;
+  brokerPhone?: string;
   notes?: string;
   invitedAt: string;
   respondedAt: string;
@@ -112,6 +115,17 @@ export default function UserContacts() {
     } catch (error) {
       console.error('Erro ao responder convite:', error);
     }
+  };
+
+  const openWhatsApp = (phoneE164: string, message?: string) => {
+    const whatsappNumber = phoneE164.replace('+', '');
+    const whatsappMessage = message ? encodeURIComponent(message) : '';
+    const whatsappUrl = `https://wa.me/${whatsappNumber}${whatsappMessage ? `?text=${whatsappMessage}` : ''}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const openBrokerProfile = (brokerSlug: string) => {
+    window.open(`/c/${brokerSlug}`, '_blank');
   };
 
   if (loading) {
@@ -370,20 +384,29 @@ export default function UserContacts() {
 
                           {/* Ações */}
                           <div className="flex gap-2">
-                            <Button variant="outline" className="flex-1">
-                              <MessageCircle className="w-4 h-4 mr-2" />
-                              Enviar Mensagem
-                            </Button>
-                            <Button variant="outline" className="flex-1">
-                              <Phone className="w-4 h-4 mr-2" />
-                              Ligar
+                            <Button 
+                              variant="outline" 
+                              className="flex-1"
+                              onClick={() => invite.brokerPhone ? openWhatsApp(invite.brokerPhone, `Olá ${invite.brokerName}! Vi seu perfil na aMORA e gostaria de conversar sobre imóveis.`) : null}
+                              disabled={!invite.brokerPhone}
+                            >
+                              <Smartphone className="w-4 h-4 mr-2" />
+                              {invite.brokerPhone ? 'WhatsApp' : 'Sem WhatsApp'}
                             </Button>
                             {invite.brokerSlug && (
-                              <Button variant="outline">
-                                <Building2 className="w-4 h-4 mr-2" />
+                              <Button 
+                                variant="outline" 
+                                className="flex-1"
+                                onClick={() => openBrokerProfile(invite.brokerSlug!)}
+                              >
+                                <ExternalLink className="w-4 h-4 mr-2" />
                                 Ver Perfil
                               </Button>
                             )}
+                            <Button variant="outline">
+                              <Mail className="w-4 h-4 mr-2" />
+                              Email
+                            </Button>
                           </div>
                         </div>
                       </div>

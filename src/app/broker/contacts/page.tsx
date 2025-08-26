@@ -26,7 +26,9 @@ import {
   Send,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  Zap,
+  Smartphone
 } from 'lucide-react';
 
 interface Contact {
@@ -60,6 +62,40 @@ interface ContactStats {
   totalInvites: number;
 }
 
+interface Property {
+  id: string;
+  title: string;
+  price: number;
+  city?: string;
+  neigh?: string;
+  m2?: number;
+  rooms?: number;
+}
+
+// Templates de mensagem para reativação
+const messageTemplates = [
+  {
+    id: 'new_property',
+    name: 'Novo Imóvel',
+    template: 'Olá {name}! Tenho um imóvel que pode ser do seu interesse. Que tal dar uma olhada?'
+  },
+  {
+    id: 'price_update',
+    name: 'Atualização de Preço',
+    template: 'Oi {name}! O imóvel que você estava interessado teve uma atualização de preço. Vale a pena conferir!'
+  },
+  {
+    id: 'market_update',
+    name: 'Atualização de Mercado',
+    template: 'Olá {name}! O mercado imobiliário está com ótimas oportunidades. Quer que eu te mostre algumas opções?'
+  },
+  {
+    id: 'custom',
+    name: 'Mensagem Personalizada',
+    template: ''
+  }
+];
+
 export default function BrokerContacts() {
   const { userRole, loading } = useAuth();
   const router = useRouter();
@@ -73,6 +109,15 @@ export default function BrokerContacts() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteNotes, setInviteNotes] = useState('');
   const [isSendingInvite, setIsSendingInvite] = useState(false);
+  
+  // Estados para reativação de cliente
+  const [showReactivationDialog, setShowReactivationDialog] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [selectedProperty, setSelectedProperty] = useState('none');
+  const [customMessage, setCustomMessage] = useState('');
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [isLoadingProperties, setIsLoadingProperties] = useState(false);
 
   // useEffect(() => {
   //   if (!loading && userRole !== 'BROKER' && userRole !== 'ADMIN') {
@@ -101,6 +146,21 @@ export default function BrokerContacts() {
       console.error('Erro ao carregar contatos:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchProperties = async () => {
+    try {
+      setIsLoadingProperties(true);
+      const response = await fetch('/api/broker/properties');
+      if (response.ok) {
+        const data = await response.json();
+        setProperties(data.properties || []);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar propriedades:', error);
+    } finally {
+      setIsLoadingProperties(false);
     }
   };
 
@@ -156,6 +216,65 @@ export default function BrokerContacts() {
     } catch (error) {
       console.error('Erro ao remover contato:', error);
     }
+  };
+
+  const openReactivationDialog = (contact: Contact) => {
+    setSelectedContact(contact);
+    setSelectedTemplate('');
+    setSelectedProperty('none');
+    setCustomMessage('');
+    setShowReactivationDialog(true);
+    fetchProperties();
+  };
+
+  const sendReactivationMessage = () => {
+    if (!selectedContact || !selectedTemplate) return;
+
+    let message = '';
+    const template = messageTemplates.find(t => t.id === selectedTemplate);
+    
+    if (template && template.id === 'custom') {
+      message = customMessage;
+    } else if (template) {
+      message = template.template.replace('{name}', selectedContact.name || '');
+    }
+
+    if (selectedProperty && selectedProperty !== 'none') {
+      const property = properties.find(p => p.id === selectedProperty);
+      if (property) {
+        message += `\n\n🏠 ${property.title}`;
+        if (property.price) {
+          message += `\n💰 R$ ${(property.price / 100).toLocaleString('pt-BR')}`;
+        }
+        if (property.city && property.neigh) {
+          message += `\n📍 ${property.neigh}, ${property.city}`;
+        }
+        if (property.m2) {
+          message += `\n📏 ${property.m2}m²`;
+        }
+        if (property.rooms) {
+          message += `\n🛏️ ${property.rooms} quartos`;
+        }
+      }
+    }
+
+    // Criar link do WhatsApp
+    const whatsappMessage = encodeURIComponent(message);
+    const whatsappNumber = selectedContact.phoneE164?.replace('+', '') || '';
+    
+    if (whatsappNumber) {
+      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
+      window.open(whatsappUrl, '_blank');
+    }
+
+    setShowReactivationDialog(false);
+  };
+
+  const openWhatsApp = (phoneE164: string, message?: string) => {
+    const whatsappNumber = phoneE164.replace('+', '');
+    const whatsappMessage = message ? encodeURIComponent(message) : '';
+    const whatsappUrl = `https://wa.me/${whatsappNumber}${whatsappMessage ? `?text=${whatsappMessage}` : ''}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   if (loading) {
@@ -422,14 +541,26 @@ export default function BrokerContacts() {
 
                       {/* Actions */}
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="flex-1">
-                          <MessageCircle className="w-4 h-4 mr-2" />
-                          Mensagem
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => openReactivationDialog(contact)}
+                        >
+                          <Zap className="w-4 h-4 mr-2" />
+                          Reativar Cliente
                         </Button>
-                        <Button variant="outline" size="sm" className="flex-1">
-                          <Phone className="w-4 h-4 mr-2" />
-                          Ligar
-                        </Button>
+                        {contact.phoneE164 && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => openWhatsApp(contact.phoneE164!)}
+                          >
+                            <Smartphone className="w-4 h-4 mr-2" />
+                            WhatsApp
+                          </Button>
+                        )}
                         <Button 
                           variant="outline" 
                           size="sm"
@@ -468,8 +599,8 @@ export default function BrokerContacts() {
 
       {/* Dialog de Convite */}
       {showInviteDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md mx-4">
+        <div className="fixed inset-0 bg-gray-900/20 backdrop-blur-sm flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4 shadow-2xl">
             <CardHeader>
               <CardTitle>Enviar Convite</CardTitle>
               <CardDescription>
@@ -515,6 +646,141 @@ export default function BrokerContacts() {
                 className="flex-1"
               >
                 {isSendingInvite ? 'Enviando...' : 'Enviar Convite'}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Dialog de Reativação de Cliente */}
+      {showReactivationDialog && selectedContact && (
+        <div className="fixed inset-0 bg-gray-900/20 backdrop-blur-sm flex items-center justify-center z-50">
+          <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto shadow-2xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-yellow-600" />
+                Reativar Cliente: {selectedContact.name}
+              </CardTitle>
+              <CardDescription>
+                Envie uma mensagem personalizada para reativar o interesse do cliente
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Template de Mensagem */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Template de Mensagem
+                </label>
+                <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Escolha um template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {messageTemplates.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Mensagem Personalizada */}
+              {selectedTemplate === 'custom' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Mensagem Personalizada
+                  </label>
+                  <textarea
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Digite sua mensagem personalizada..."
+                    rows={4}
+                    value={customMessage}
+                    onChange={(e) => setCustomMessage(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {/* Seleção de Imóvel */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Imóvel para Destacar (opcional)
+                </label>
+                <Select value={selectedProperty} onValueChange={setSelectedProperty}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Escolha um imóvel do seu portfólio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhum imóvel específico</SelectItem>
+                    {isLoadingProperties ? (
+                      <SelectItem value="loading" disabled>Carregando imóveis...</SelectItem>
+                    ) : (
+                      properties.map((property) => (
+                        <SelectItem key={property.id} value={property.id}>
+                          {property.title} - R$ {(property.price / 100).toLocaleString('pt-BR')}
+                          {property.city && ` - ${property.city}`}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Preview da Mensagem */}
+              {selectedTemplate && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-700 mb-2">Preview da Mensagem:</h4>
+                  <div className="text-sm text-gray-600 whitespace-pre-line">
+                    {(() => {
+                      let message = '';
+                      const template = messageTemplates.find(t => t.id === selectedTemplate);
+                      
+                      if (template && template.id === 'custom') {
+                        message = customMessage;
+                      } else if (template) {
+                        message = template.template.replace('{name}', selectedContact.name || '');
+                      }
+
+                                             if (selectedProperty && selectedProperty !== 'none') {
+                         const property = properties.find(p => p.id === selectedProperty);
+                         if (property) {
+                           message += `\n\n🏠 ${property.title}`;
+                           if (property.price) {
+                             message += `\n💰 R$ ${(property.price / 100).toLocaleString('pt-BR')}`;
+                           }
+                           if (property.city && property.neigh) {
+                             message += `\n📍 ${property.neigh}, ${property.city}`;
+                           }
+                           if (property.m2) {
+                             message += `\n📏 ${property.m2}m²`;
+                           }
+                           if (property.rooms) {
+                             message += `\n🛏️ ${property.rooms} quartos`;
+                           }
+                         }
+                       }
+
+                      return message || 'Selecione um template para ver a mensagem...';
+                    })()}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+            <div className="px-6 pb-6 flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowReactivationDialog(false)}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={sendReactivationMessage}
+                disabled={!selectedTemplate || (selectedTemplate === 'custom' && !customMessage.trim())}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                <Smartphone className="w-4 h-4 mr-2" />
+                Enviar via WhatsApp
               </Button>
             </div>
           </Card>

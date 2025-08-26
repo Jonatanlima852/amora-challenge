@@ -89,71 +89,7 @@ export function BrokerSidebar() {
         })}
       </nav>
 
-      {/* Seção de Estatísticas Rápidas */}
-      <div className="mt-8 px-4">
-        <div className="bg-gray-50 rounded-lg p-4">
-          <h3 className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-3">
-            Resumo Rápido
-          </h3>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Imóveis Ativos</span>
-              <span className="font-semibold text-blue-600">
-                {stats?.properties.active || 0}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Contatos</span>
-              <span className="font-semibold text-green-600">
-                {stats?.contacts.active || 0}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Grupos</span>
-              <span className="font-semibold text-purple-600">
-                {stats?.groups.active || 0}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Seção de Ações Rápidas */}
-      <div className="mt-4 px-4">
-        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-          <h3 className="text-xs font-medium text-blue-900 uppercase tracking-wide mb-3">
-            Ações Rápidas
-          </h3>
-          <div className="space-y-2">
-            <Link
-              href="/broker/properties/new"
-              className="block w-full text-left text-sm text-blue-700 hover:text-blue-800 hover:bg-blue-100 rounded px-2 py-1 transition-colors"
-            >
-              + Adicionar Imóvel
-            </Link>
-            <Link
-              href="/broker/contacts"
-              className="block w-full text-left text-sm text-blue-700 hover:text-blue-800 hover:bg-blue-100 rounded px-2 py-1 transition-colors"
-            >
-              + Novo Contato
-            </Link>
-            <Link
-              href="/broker/groups"
-              className="block w-full text-left text-sm text-blue-700 hover:text-blue-800 hover:bg-blue-100 rounded px-2 py-1 transition-colors"
-            >
-              + Criar Grupo
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer da Sidebar */}
-      <div className="mt-auto p-4 border-t border-gray-200">
-        <div className="text-xs text-gray-500 text-center">
-          <p>aMORA Imóveis</p>
-          <p>Versão 1.0.0</p>
-        </div>
-      </div>
+      
     </div>
   );
 }
